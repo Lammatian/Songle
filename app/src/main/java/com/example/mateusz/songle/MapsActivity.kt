@@ -39,14 +39,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val sydney = LatLng(-34.0, 151.0)
         mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-
-        // Enable user location
-        try{
-            mMap.isMyLocationEnabled = true;
-        } catch (se : SecurityException){
-            print("Security exception thrown [onMapReady]");
-        }
-
-        mMap.uiSettings.isMyLocationButtonEnabled = true;
     }
 }
