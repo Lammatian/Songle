@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">Songle</string>
     <string name="title_activity_maps">Map</string>
-    <string name="to_map">To map</string>
-    <string name="click_me">Click me!</string>
+    <string name="statistics">Statistics</string>
+    <string name="start_game">Start tour!</string>
     <string name="clicks">Clicks:</string>
     <string name="test">Test</string>
+    <string name="help">Help</string>
+    <string name="title">Songle</string>
 </resources>

@@ -7,10 +7,13 @@ import android.widget.TextView
 
 /**
  * Created by mateusz on 24/10/17.
+ * Taken from https://coderwall.com/p/qxxmaa/android-use-a-custom-font-everywhere
  */
-class FontChangeCrawler(var typeface: Typeface){
-    var _typeface = typeface;
+class FontChangeCrawler(tf: Typeface){
+    var typeface = tf
 
+    // Replace font of all TextViews (text and buttons) to a given font recursively
+    // Doesn't include ListViews
     fun replaceFonts(viewTree: ViewGroup) {
         var child: View
 
@@ -22,7 +25,7 @@ class FontChangeCrawler(var typeface: Typeface){
                 replaceFonts(child)
             }
             else if (child is TextView){
-                child.setTypeface(_typeface)
+                child.typeface = typeface
             }
         }
     }

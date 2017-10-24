@@ -1,6 +1,7 @@
 package com.example.mateusz.songle
 
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Typeface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -14,24 +15,28 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val baloo_font = Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
-        var font_change_crawler = FontChangeCrawler(baloo_font)
-        font_change_crawler.replaceFonts(findViewById(android.R.id.content))
-        //testText.typeface = baloo_font
+        val balooFont = Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
+        val plumpFont = Typeface.createFromAsset(assets, "fonts/Plump.ttf")
+        var fontChangeCrawler = FontChangeCrawler(balooFont)
+        fontChangeCrawler.replaceFonts(findViewById(android.R.id.content))
 
         this.title = "Test"
-        testText.text = "Still testing"
+        testText.typeface = plumpFont
     }
 
-    fun btnClick(view: View){
-        btnTest.text = "Changed text!"
-        btnTest.elevation = 100F
+    fun btnStartGame(view: View){
+        btnStart.text = "Changed text!"
+        btnStart.elevation = 100F
         count += 1
         txvCount.text = "Clicks: " + String.format("%d", count)
     }
 
-    fun btnToMap(view: View){
+    fun btnShowStats(view: View){
         val intent = Intent(this, MapsActivity::class.java)
         startActivity(intent)
+    }
+
+    fun btnShowHelp(view: View){
+
     }
 }

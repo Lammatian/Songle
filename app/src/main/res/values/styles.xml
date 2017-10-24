@@ -4,11 +4,14 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!--   your app branding color for the app bar -->
-        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimary">@color/colorPrimaryText</item>
         <!--   darker variant for the status bar and contextual app bars -->
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <!--   theme UI controls like checkboxes and text fields -->
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:textViewStyle">@style/MyTextView</item>
+        <item name="android:buttonStyle">@style/MyButton</item>
     </style>
 
     <!-- Custom theme -->
@@ -19,5 +22,17 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <!--   theme UI controls like checkboxes and text fields -->
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- TextView style -->
+    <style name="MyTextView" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <!-- Button style -->
+    <style name="MyButton" parent="android:Widget.Button">
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 </resources>
