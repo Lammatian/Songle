@@ -1,11 +1,18 @@
 package com.example.mateusz.songle
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Path
 import android.graphics.Typeface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.view.ViewAnimationUtils
+import android.view.animation.LinearInterpolator
+import android.widget.TextView
+import android.widget.ViewAnimator
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -37,6 +44,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun btnShowHelp(view: View){
-
+        val path : Path = Path()
+        path.addCircle(txvTest.x-100f, txvTest.y, 100f, Path.Direction.CW)
+        //var animator = ObjectAnimator.ofFloat(txvTest, "x", txvTest.x, txvTest.x+100f).start()
+        var animator2 = ObjectAnimator.ofFloat(txvTest, TextView.X, TextView.Y, path).start()
+//        animator.addUpdateListener{
+//            val value = it.animatedValue as Float
+//            txvTest.translationY = value
+//            it.interpolator = LinearInterpolator()
+//            it.duration = 300
+//        }
+//        animator.start()
     }
 }
