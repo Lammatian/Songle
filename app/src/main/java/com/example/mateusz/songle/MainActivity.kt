@@ -1,10 +1,12 @@
 package com.example.mateusz.songle
 
+import android.animation.AnimatorSet
 import android.animation.TimeInterpolator
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Typeface
+import android.opengl.Visibility
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.renderscript.Sampler
@@ -70,12 +72,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun fabChangeView(view: View){
-        var animator : ValueAnimator = if (!stretched) ValueAnimator.ofInt(txvStretch.width, txvStretch.width + 500) else ValueAnimator.ofInt(txvStretch.width, txvStretch.width - 500)
+        btnSecond.alpha = 0f
+        btnSecond.visibility = View.VISIBLE
+
+        var animator = ValueAnimator.ofFloat(btnSecond.alpha, 0f, 1f)
+        animator.addUpdateListener{
+            val value = animator.animatedValue as Float
+            btnSecond.alpha = value
+        }
+        animator.duration = 300
+        animator.interpolator = LinearInterpolator()
+        animator.start()
+        stretched = !stretched
+    }
+
+    fun btnUnstretch(view: View){
+        var animator = ValueAnimator.ofInt(menuButtons.layoutParams.width, (if (stretched) 200 else 700))
         animator.addUpdateListener {
             val value = animator.animatedValue as Int
-            var lp = txvStretch.layoutParams
+            var lp = menuButtons.layoutParams
             lp.width = value
-            txvStretch.layoutParams = lp
+            menuButtons.layoutParams = lp
         }
         animator.duration = 300
         animator.interpolator = AccelerateInterpolator()
