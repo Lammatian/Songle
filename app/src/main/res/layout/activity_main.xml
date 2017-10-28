@@ -51,12 +51,10 @@
 
         <Button
             android:id="@+id/btnStats"
-            android:layout_width="match_parent"
+            android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
-            android:layout_marginLeft="70dp"
-            android:layout_marginRight="70dp"
             android:text="@string/statistics"
             android:onClick="btnShowStats"/>
 
@@ -80,6 +78,7 @@
             android:focusable="true"
             android:elevation="24dp"
             android:layout_below="@id/btnHelp"
+            android:onClick="fabChangeView"
             app:layout_anchorGravity="bottom"/>
 
         <TextView
@@ -87,7 +86,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/fab"
+            android:layout_centerHorizontal="true"
             android:text="Testujemy"/>
+
+        <TextView
+            android:id="@+id/txvStretch"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_below="@id/txvTest"
+            android:background="@drawable/rectangle"
+            android:text="Test"
+            android:textAlignment="center" />
     </RelativeLayout>
 
 </android.support.constraint.ConstraintLayout>
