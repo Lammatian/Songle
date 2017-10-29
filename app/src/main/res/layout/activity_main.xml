@@ -13,62 +13,7 @@
         android:orientation="vertical"
         android:padding="5dp">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@id/btnStart">
-
-            <TextView
-                android:id="@+id/testText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:layout_centerVertical="true"
-                android:textSize="60sp"
-                android:layout_margin="15dp"
-                android:text="@string/title"/>
-
-            <TextView
-                android:id="@+id/txvCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/testText"
-                android:layout_margin="5dp"
-                android:text="@string/clicks"/>
-        </RelativeLayout>
-
         <!-- In the future, think about a vay to generalise buttons -->
-        <Button
-            android:id="@+id/btnStart"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginLeft="70dp"
-            android:layout_marginRight="70dp"
-            android:layout_above="@id/btnStats"
-            android:text="@string/start_game"
-            android:onClick="btnStartGame"/>
-
-        <Button
-            android:id="@+id/btnStats"
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:text="@string/statistics"
-            android:onClick="btnShowStats"/>
-
-        <Button
-            android:id="@+id/btnHelp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginLeft="70dp"
-            android:layout_marginRight="70dp"
-            android:layout_below="@id/btnStats"
-            android:text="@string/help"
-            android:onClick="btnShowHelp"/>
-
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
             android:layout_width="wrap_content"
@@ -77,43 +22,60 @@
             android:clickable="true"
             android:focusable="true"
             android:elevation="24dp"
-            android:layout_below="@id/btnHelp"
+            android:layout_below="@id/menuButtons"
             android:onClick="fabChangeView"
             app:layout_anchorGravity="bottom"/>
-
-        <TextView
-            android:id="@+id/txvTest"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/fab"
-            android:layout_centerHorizontal="true"
-            android:text="Testujemy"/>
 
         <LinearLayout
             android:id="@+id/menuButtons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/txvTest">
+            android:gravity="right"
+            android:background="@drawable/rectangle"
+            android:layout_alignParentEnd="true">
+
+            <Button
+                android:id="@+id/btnRestart"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/circle"
+                android:text="R"
+                android:layout_margin="10dp"
+                android:visibility="gone"
+                android:textSize="15sp"/>
+
+            <Button
+                android:id="@+id/btnHelp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/circle"
+                android:text="\?"
+                android:layout_margin="10dp"
+                android:visibility="gone"
+                android:textSize="15sp"/>
+
+            <Button
+                android:id="@+id/btnStats"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/circle"
+                android:text="S"
+                android:layout_margin="10dp"
+                android:visibility="gone"
+                android:textSize="15sp"/>
+
 
             <Button
                 android:id="@+id/btnStretch"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:textSize="15sp"
-                android:layout_below="@id/txvTest"
-                android:background="@drawable/rectangle"
-                android:text="Test"
-                android:onClick="btnUnstretch"
+                android:background="@drawable/circle"
+                android:text="EXP"
+                android:layout_margin="10dp"
+                android:gravity="center_vertical"
+                android:onClick="btnMenu"
                 android:textAlignment="center" />
-
-            <Button
-                android:id="@+id/btnSecond"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="@drawable/rectangle"
-                android:text="Zest"
-                android:visibility="gone"
-                android:textSize="15sp"/>
         </LinearLayout>
     </RelativeLayout>
 
