@@ -38,6 +38,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        testView.layoutParams.height = 1000
+
         // Floating Action Button drag drop fun
         var y = 0f
         var y1 = 0f
@@ -64,9 +66,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                     // movement down
                     else if (y1!! > y!!) {
-                        fab.animate().y(800f).start()
-                        testView.animate().y(800f).start()
+                        fab.animate().y(mainMapView.y + 0.6f*mainMapView.height).start()
+                        testView.animate().y(mainMapView.y + 0.6f*mainMapView.height).start()
                     }
+
                     down = !down
                 }
                 // To enable repeating actions
