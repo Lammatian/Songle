@@ -10,27 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:orientation="vertical"
-        android:padding="5dp">
-
-        <!-- In the future, think about a vay to generalise buttons -->
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:elevation="24dp"
-            android:layout_below="@id/menuButtons"
-            android:onClick="fabChangeView"
-            app:layout_anchorGravity="bottom"/>
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/menuButtons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="right"
+            android:elevation="16dp"
             android:background="@drawable/rectangle"
             android:layout_alignParentEnd="true">
 
@@ -60,6 +47,7 @@
                 android:layout_height="50dp"
                 android:background="@drawable/circle"
                 android:text="S"
+                android:onClick="btnToMap"
                 android:layout_margin="10dp"
                 android:visibility="gone"
                 android:textSize="15sp"/>
@@ -76,6 +64,36 @@
                 android:gravity="center_vertical"
                 android:onClick="btnMenu"
                 android:textAlignment="center" />
+        </LinearLayout>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:elevation="24dp"
+            android:src="@drawable/ic_swap_vert_black_24px"
+            android:layout_below="@id/menuButtons"
+            app:layout_anchorGravity="bottom"/>
+
+        <LinearLayout
+            android:id="@+id/testView1"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/fab"
+            android:background="@color/colorPrimaryDark">
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/testView2"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/fab"
+            android:background="@color/colorPrimary">
         </LinearLayout>
     </RelativeLayout>
 

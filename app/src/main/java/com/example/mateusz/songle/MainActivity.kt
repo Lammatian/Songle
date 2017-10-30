@@ -1,6 +1,8 @@
 package com.example.mateusz.songle
 
 import android.animation.*
+import android.app.ActionBar
+import android.content.ClipData
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Typeface
@@ -8,11 +10,14 @@ import android.opengl.Visibility
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.renderscript.Sampler
+import android.view.DragEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
+import android.widget.RelativeLayout
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -36,21 +41,47 @@ class MainActivity : AppCompatActivity() {
 
         this.title = "Test"
         //txvTest.typeface = plumpFont
-    }
 
-    fun fabChangeView(view: View){
-        btnStats.alpha = 0f
-        btnStats.visibility = View.VISIBLE
+        // Floating Action Button drag drop fun
+        var y = 0f
+        var y1 = 0f
+        var down = true
 
-        var animator = ValueAnimator.ofFloat(btnStats.alpha, 0f, 1f)
-        animator.addUpdateListener{
-            val value = animator.animatedValue as Float
-            btnStats.alpha = value
-        }
-        animator.duration = 300
-        animator.interpolator = LinearInterpolator()
-        animator.start()
-        stretched = !stretched
+        fab.setOnTouchListener(object: View.OnTouchListener {
+            // Set of conditions to enable movement on pull
+            override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+                // If we click on the button, set y to when clicked just once
+                if ((event?.action) == MotionEvent.ACTION_DOWN && down) {
+                    y = event?.y
+                    down = !down
+                }
+                // If we move the cursor, set y1 to the current movement
+                if ((event?.action) == MotionEvent.ACTION_MOVE) {
+                    y1 = event?.y
+                    btnStretch.text = y.toString()
+                }
+                // If we stop holding touch down, check if the movement was up or down
+                if ((event?.action) == MotionEvent.ACTION_UP) {
+                    btnStretch.text = y1.toString()
+
+                    // movement up (because the y-axis increases downwards)
+                    if (y1!! < y!!) {
+                        fab.animate().y(0f).start()
+                        testView1.animate().y(0f - testView1.height + fab.height/2).start()
+                        testView2.animate().y(0f + fab.height/2).start()
+                    }
+                    // movement down
+                    else if (y1!! > y!!) {
+                        fab.animate().y(800f).start()
+                        testView1.animate().y(800f - testView1.height + fab.height/2).start()
+                        testView2.animate().y(800f + fab.height/2).start()
+                    }
+                    down = !down
+                }
+                // To enable repeating actions
+                return true
+            }
+        })
     }
 
     // Show or hide top menu along with its buttons
@@ -65,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         stretched = !stretched
     }
 
+    // Show the top menu and all the buttons inside
     fun showMenu() {
         var animatorSet = AnimatorSet()
 
@@ -125,6 +157,8 @@ class MainActivity : AppCompatActivity() {
         animatorSet.start()
     }
 
+    // Hide the menu and all the buttons inside
+    // TODO: Bug when closing and opening the menu quickly
     fun hideMenu() {
         var animatorSet = AnimatorSet()
 
@@ -142,12 +176,8 @@ class MainActivity : AppCompatActivity() {
         shrinkMenu.interpolator = AccelerateInterpolator()
 
         // Animations to hide buttons
-        btnStats.alpha = 1f
-        btnHelp.alpha = 1f
-        btnRestart.alpha = 1f
-
         // Hide help button
-        var hideRestart = ValueAnimator.ofFloat(btnRestart.alpha, 1f, 0f)
+        var hideRestart = ValueAnimator.ofFloat(btnRestart.alpha, btnRestart.alpha, 0f)
         hideRestart.addUpdateListener {
             val value = hideRestart.animatedValue as Float
             btnRestart.alpha = value
@@ -165,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         hideRestart.interpolator = DecelerateInterpolator()
 
         // Hide help button
-        var hideHelp = ValueAnimator.ofFloat(btnHelp.alpha, 1f, 0f)
+        var hideHelp = ValueAnimator.ofFloat(btnHelp.alpha, btnHelp.alpha, 0f)
         hideHelp.addUpdateListener {
             val value = hideHelp.animatedValue as Float
             btnHelp.alpha = value
@@ -184,7 +214,7 @@ class MainActivity : AppCompatActivity() {
         hideHelp.interpolator = DecelerateInterpolator()
 
         // Hide stats button
-        var hideStats = ValueAnimator.ofFloat(btnStats.alpha, 1f, 0f)
+        var hideStats = ValueAnimator.ofFloat(btnStats.alpha, btnStats.alpha, 0f)
         hideStats.addUpdateListener {
             val value = hideStats.animatedValue as Float
             btnStats.alpha = value
@@ -205,5 +235,11 @@ class MainActivity : AppCompatActivity() {
         // Play animations together
         animatorSet.playTogether(shrinkMenu, hideStats, hideHelp, hideRestart)
         animatorSet.start()
+    }
+
+    // Go to map; just for testing
+    fun btnToMap(view: View) {
+        val intent = Intent(this, MapsActivity::class.java)
+        startActivity(intent)
     }
 }
