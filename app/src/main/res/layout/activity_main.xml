@@ -1,100 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/layout"
     tools:context="com.example.mateusz.songle.MainActivity">
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:orientation="vertical">
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="5dp"
+        android:clickable="true"
+        app:fabSize="normal"
+        android:src="@drawable/ic_format_list_numbered_black_24px" />
 
-        <LinearLayout
-            android:id="@+id/menuButtons"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:elevation="16dp"
-            android:background="@drawable/rectangle"
-            android:layout_alignParentEnd="true">
+    <View
+        android:id="@+id/dummy"
+        android:layout_width="1dp"
+        android:layout_height="16dp"
+        app:layout_anchor="@id/fab1"
+        app:layout_anchorGravity="top|right|end" />
 
-            <Button
-                android:id="@+id/btnRestart"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="@drawable/circle"
-                android:text="R"
-                android:layout_margin="10dp"
-                android:visibility="gone"
-                android:textSize="15sp"/>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:src="@drawable/ic_add_black_24px"
+        android:layout_marginEnd="5dp"
+        android:clickable="true"
+        app:fabSize="normal"
+        app:layout_anchor="@id/dummy"
+        app:layout_anchorGravity="top"/>
 
-            <Button
-                android:id="@+id/btnHelp"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="@drawable/circle"
-                android:text="\?"
-                android:layout_margin="10dp"
-                android:visibility="gone"
-                android:textSize="15sp"/>
-
-            <Button
-                android:id="@+id/btnStats"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="@drawable/circle"
-                android:text="S"
-                android:onClick="btnToMap"
-                android:layout_margin="10dp"
-                android:visibility="gone"
-                android:textSize="15sp"/>
-
-
-            <Button
-                android:id="@+id/btnStretch"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:textSize="15sp"
-                android:background="@drawable/circle"
-                android:text="EXP"
-                android:layout_margin="10dp"
-                android:gravity="center_vertical"
-                android:onClick="btnMenu"
-                android:textAlignment="center" />
-        </LinearLayout>
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:elevation="24dp"
-            android:src="@drawable/ic_swap_vert_black_24px"
-            android:layout_below="@id/menuButtons"
-            app:layout_anchorGravity="bottom"/>
-
-        <LinearLayout
-            android:id="@+id/testView1"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@id/fab"
-            android:background="@color/colorPrimaryDark">
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/testView2"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@id/fab"
-            android:background="@color/colorPrimary">
-        </LinearLayout>
-    </RelativeLayout>
-
-</android.support.constraint.ConstraintLayout>
+</android.support.design.widget.CoordinatorLayout>
