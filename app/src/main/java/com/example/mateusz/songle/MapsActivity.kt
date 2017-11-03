@@ -3,6 +3,10 @@ package com.example.mateusz.songle
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import com.google.android.gms.location.LocationServices
@@ -16,6 +20,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.net.ConnectivityManager
 import android.support.v4.content.ContextCompat
 import android.view.MotionEvent
 import android.view.View
@@ -29,6 +34,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
 
+    // TODO: Implement
+    //region Network receiver
+    private inner class NetworkReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val networkInfo = connManager.activeNetworkInfo
+
+            if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
+                // use WIFI
+            }
+            else if (networkInfo != null) {
+                // use network
+            }
+            else {
+                // No WIFI and permission or no connection
+            }
+        }
+    }
+    //endregion
+
+    private var networkReceiver = NetworkReceiver()
+
+    interface DownloadCompleteListener {
+        fun onDownloadComplete(result: String)
+    }
+
     //region On create
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,44 +69,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        testView.layoutParams.height = 1000
-
-        // Floating Action Button drag drop fun
-        var y = 0f
-        var y1 = 0f
-        var down = true
-
-        fab.setOnTouchListener(object: View.OnTouchListener {
-            // Set of conditions to enable movement on pull
-            override fun onTouch(view: View?, event: MotionEvent?): Boolean {
-                // If we click on the button, set y to when clicked just once
-                if ((event?.action) == MotionEvent.ACTION_DOWN && down) {
-                    y = event?.y
-                    down = !down
-                }
-                // If we move the cursor, set y1 to the current movement
-                if ((event?.action) == MotionEvent.ACTION_MOVE) {
-                    y1 = event?.y
-                }
-                // If we stop holding touch down, check if the movement was up or down
-                if ((event?.action) == MotionEvent.ACTION_UP) {
-                    // movement up (because the y-axis increases downwards)
-                    if (y1!! < y!!) {
-                        fab.animate().y(0f).start()
-                        testView.animate().y(0f).start()
-                    }
-                    // movement down
-                    else if (y1!! > y!!) {
-                        fab.animate().y(mainMapView.y + 0.6f*mainMapView.height).start()
-                        testView.animate().y(mainMapView.y + 0.6f*mainMapView.height).start()
-                    }
-
-                    down = !down
-                }
-                // To enable repeating actions
-                return true
-            }
-        })
+        // Register BroadcastReceiver to track connection changes.
+        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        this.registerReceiver(networkReceiver, filter)
     }
     //endregion
 
@@ -117,159 +113,132 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     //endregion
 
-    //region Menu
-    // Show or hide top menu along with its buttons
-    var stretched = false
+    //#region Menu Open/Close
+    // Variable checking if menu is opened or not
+    private var opened = false
 
-    fun btnMenu(view: View) {
-        if (!stretched) {
-            showMenu()
-        }
-        else {
-            hideMenu()
-        }
+    fun menuOpenClose(view: View) {
+        if (!opened)
+            openMenu()
+        else
+            closeMenu()
 
-        stretched = !stretched
+        opened = !opened
     }
 
-    // Show the top menu and all the buttons inside
-    fun showMenu() {
-        var animatorSet = AnimatorSet()
+    private fun openMenu() {
+        // TODO: When closing and opening quickly, buttons don't show up
+        // TODO: On animation end in opening set visibility to true OR cancel hide animations
+        // Set visibility of all buttons to visible and opacity to 0
+        fab_help.alpha = 0f
+        fab_stats.alpha = 0f
+        fab_restart.alpha = 0f
+        fab_help.visibility = View.VISIBLE
+        fab_stats.visibility = View.VISIBLE
+        fab_restart.visibility = View.VISIBLE
 
-        // Stretch menu
-        // TODO: Adjust starting and ending width better
-        var animatorStretchMenu = ValueAnimator.ofInt(btnStretch.layoutParams.width + 60, 800)
-        animatorStretchMenu.addUpdateListener {
-            val value = animatorStretchMenu.animatedValue as Int
-            var lp = menuButtons.layoutParams
-            lp.width = value
-            menuButtons.layoutParams = lp
-            menuButtons.requestLayout()
+        // Animations to show all buttons
+        // Help button
+        var showHelp = ValueAnimator.ofFloat(0f, 1f)
+        showHelp.addUpdateListener {
+            val value = showHelp.animatedValue as Float
+            fab_help.alpha = value
         }
-        animatorStretchMenu.duration = 300
-        animatorStretchMenu.interpolator = AccelerateInterpolator()
-
-        // Animations to show buttons
-        // First, set visibility to visible and opacity to 0
-        btnStats.alpha = 0f
-        btnHelp.alpha = 0f
-        btnRestart.alpha = 0f
-        btnStats.visibility = View.VISIBLE
-        btnHelp.visibility = View.VISIBLE
-        btnRestart.visibility = View.VISIBLE
+        showHelp.duration = 300
+        showHelp.interpolator = AccelerateInterpolator()
 
         // Stats button
-        var showStats = ValueAnimator.ofFloat(btnStats.alpha, 0f, 1f)
-        showStats.addUpdateListener{
+        var showStats = ValueAnimator.ofFloat(0f, 1f)
+        showStats.addUpdateListener {
             val value = showStats.animatedValue as Float
-            btnStats.alpha = value
+            fab_stats.alpha = value
         }
         showStats.duration = 300
         showStats.interpolator = AccelerateInterpolator()
         showStats.startDelay = 50
 
-        // Help button
-        var showHelp = ValueAnimator.ofFloat(btnHelp.alpha, 0f, 1f)
-        showHelp.addUpdateListener{
-            val value = showHelp.animatedValue as Float
-            btnHelp.alpha = value
-        }
-        showHelp.duration = 300
-        showHelp.interpolator = AccelerateInterpolator()
-        showHelp.startDelay = 100
-
         // Restart button
-        var showRestart = ValueAnimator.ofFloat(btnRestart.alpha, 0f, 1f)
-        showRestart.addUpdateListener{
+        var showRestart = ValueAnimator.ofFloat(0f, 1f)
+        showRestart.addUpdateListener {
             val value = showRestart.animatedValue as Float
-            btnRestart.alpha = value
+            fab_restart.alpha = value
         }
         showRestart.duration = 300
         showRestart.interpolator = AccelerateInterpolator()
-        showRestart.startDelay = 150
+        showRestart.startDelay = 100
 
-        // Play all animations together (TODO: Add offset)
-        animatorSet.playTogether(animatorStretchMenu, showStats, showHelp, showRestart)
-        animatorSet.start()
+        // Play all animations together (with given delays)
+        var animations = AnimatorSet()
+        animations.playTogether(showHelp, showStats, showRestart)
+        animations.start()
     }
 
-    // Hide the menu and all the buttons inside
-    fun hideMenu() {
-        var animatorSet = AnimatorSet()
-
-        // Animation to shrink menu
-        // TODO: Adjust starting width better
-        var shrinkMenu = ValueAnimator.ofInt(menuButtons.layoutParams.width, btnStretch.layoutParams.width + 60)
-        shrinkMenu.addUpdateListener {
-            val value = shrinkMenu.animatedValue as Int
-            var lp = menuButtons.layoutParams
-            lp.width = value
-            menuButtons.layoutParams = lp
-        }
-        shrinkMenu.duration = 300
-        shrinkMenu.startDelay = 100
-        shrinkMenu.interpolator = AccelerateInterpolator()
-
-        // Animations to hide buttons
-        // Hide help button
-        var hideRestart = ValueAnimator.ofFloat(btnRestart.alpha, btnRestart.alpha, 0f)
-        hideRestart.addUpdateListener {
-            val value = hideRestart.animatedValue as Float
-            btnRestart.alpha = value
-        }
-        hideRestart.addListener(object : Animator.AnimatorListener {
-            override fun onAnimationCancel(animation: Animator) {}
-            override fun onAnimationRepeat(animation: Animator) {}
-            override fun onAnimationStart(animation: Animator) {}
-
-            override fun onAnimationEnd(animation: Animator) {
-                btnRestart.visibility = View.GONE
+    private fun closeMenu() {
+        // Animations to hide all buttons
+        // Help button
+        var hideHelp = ValueAnimator.ofFloat(1f, 0f)
+        hideHelp.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {}
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {
+                fab_help.visibility = View.INVISIBLE
             }
         })
+        hideHelp.addUpdateListener {
+            val value = hideHelp.animatedValue as Float
+            fab_help.alpha = value
+        }
+        hideHelp.duration = 300
+        hideHelp.interpolator = DecelerateInterpolator()
+        hideHelp.startDelay = 100
+
+        // Stats button
+        var hideStats = ValueAnimator.ofFloat(1f, 0f)
+        hideStats.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {}
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {
+                fab_stats.visibility = View.INVISIBLE
+            }
+        })
+        hideStats.addUpdateListener {
+            val value = hideStats.animatedValue as Float
+            fab_stats.alpha = value
+        }
+        hideStats.duration = 300
+        hideStats.interpolator = DecelerateInterpolator()
+        hideStats.startDelay = 50
+
+        // Restart button
+        var hideRestart = ValueAnimator.ofFloat(1f, 0f)
+        hideRestart.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {}
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {
+                fab_restart.visibility = View.INVISIBLE
+            }
+        })
+        hideRestart.addUpdateListener {
+            val value = hideRestart.animatedValue as Float
+            fab_restart.alpha = value
+        }
         hideRestart.duration = 300
         hideRestart.interpolator = DecelerateInterpolator()
 
-        // Hide help button
-        var hideHelp = ValueAnimator.ofFloat(btnHelp.alpha, btnHelp.alpha, 0f)
-        hideHelp.addUpdateListener {
-            val value = hideHelp.animatedValue as Float
-            btnHelp.alpha = value
-        }
-        hideHelp.addListener(object : Animator.AnimatorListener {
-            override fun onAnimationCancel(animation: Animator) {}
-            override fun onAnimationRepeat(animation: Animator) {}
-            override fun onAnimationStart(animation: Animator) {}
-
-            override fun onAnimationEnd(animation: Animator) {
-                btnHelp.visibility = View.GONE
-            }
-        })
-        hideHelp.duration = 300
-        hideHelp.startDelay = 75
-        hideHelp.interpolator = DecelerateInterpolator()
-
-        // Hide stats button
-        var hideStats = ValueAnimator.ofFloat(btnStats.alpha, btnStats.alpha, 0f)
-        hideStats.addUpdateListener {
-            val value = hideStats.animatedValue as Float
-            btnStats.alpha = value
-        }
-        hideStats.addListener(object : Animator.AnimatorListener {
-            override fun onAnimationCancel(animation: Animator) {}
-            override fun onAnimationRepeat(animation: Animator) {}
-            override fun onAnimationStart(animation: Animator) {}
-
-            override fun onAnimationEnd(animation: Animator) {
-                btnStats.visibility = View.GONE
-            }
-        })
-        hideStats.duration = 300
-        hideStats.startDelay = 150
-        hideStats.interpolator = DecelerateInterpolator()
-
-        // Play animations together
-        animatorSet.playTogether(shrinkMenu, hideStats, hideHelp, hideRestart)
-        animatorSet.start()
+        // Play all animations together (with given delays)
+        var animations = AnimatorSet()
+        animations.playTogether(hideHelp, hideStats, hideRestart)
+        animations.start()
     }
-    //endregion
+    //#endregion
+
+    fun showWords(view: View) {
+        if (words.visibility == View.INVISIBLE)
+            words.visibility = View.VISIBLE
+        else
+            words.visibility = View.INVISIBLE
+    }
 }
