@@ -15,8 +15,7 @@ interface DownloadCompleteListener{
     fun onDownloadComplete(result: String)
 }
 
-class DownloadXmlTask(private val resources: Resources,
-                      private val caller: DownloadCompleteListener,
+class DownloadXmlTask(private val caller: DownloadCompleteListener,
                       private val summaryPref: Boolean) :
         AsyncTask<String, Void, String>() {
 

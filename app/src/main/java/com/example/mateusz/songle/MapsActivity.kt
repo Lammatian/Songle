@@ -56,8 +56,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var networkReceiver = NetworkReceiver()
 
-    interface DownloadCompleteListener {
-        fun onDownloadComplete(result: String)
+    class dcl : DownloadCompleteListener {
+        override fun onDownloadComplete(result: String) {
+            print(result)
+        }
     }
 
     //region On create
@@ -68,6 +70,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        // Try downloading xml
+        val parsed = DownloadXmlTask(dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
+
+        // Works!
+        testText.text = parsed.get()
 
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)

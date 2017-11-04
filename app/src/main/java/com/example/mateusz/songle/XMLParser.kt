@@ -29,7 +29,7 @@ class XMLParser {
     @Throws(XmlPullParserException::class, IOException::class)
     fun readFeed(parser: XmlPullParser): List<Song> {
         val songs = ArrayList<Song>()
-        parser.require(XmlPullParser.START_TAG, ns, "feed")
+        parser.require(XmlPullParser.START_TAG, ns, "Songs")
 
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG)
@@ -57,10 +57,10 @@ class XMLParser {
                 continue
 
             when (parser.name) {
-                "Number" -> number = readNumber(parser)
-                "Artist" -> artist = readArtist(parser)
-                "Title" -> title = readTitle(parser)
-                "Link" -> link = readLink(parser)
+                "Number" -> number = readValue(parser, "Number").toInt()
+                "Artist" -> artist = readValue(parser, "Artist")
+                "Title" -> title = readValue(parser, "Title")
+                "Link" -> link = readValue(parser, "Link")
                 else -> skip(parser)
             }
         }
@@ -69,35 +69,11 @@ class XMLParser {
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
-    private fun readNumber(parser: XmlPullParser): Int {
-        parser.require(XmlPullParser.START_TAG, ns, "Number")
-        val number = readText(parser).toInt()
-        parser.require(XmlPullParser.END_TAG, ns, "Number")
-        return number
-    }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun readTitle(parser: XmlPullParser): String {
-        parser.require(XmlPullParser.START_TAG, ns, "Title")
-        val title = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "Title")
-        return title
-    }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun readArtist(parser: XmlPullParser): String {
-        parser.require(XmlPullParser.START_TAG, ns, "Artist")
-        val artist = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "Artist")
-        return artist
-    }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun readLink(parser: XmlPullParser): String {
-        parser.require(XmlPullParser.START_TAG, ns, "Link")
-        val link = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "Link")
-        return link
+    private fun readValue(parser: XmlPullParser, value: String): String {
+        parser.require(XmlPullParser.START_TAG, ns, value)
+        val result = readText(parser)
+        parser.require(XmlPullParser.END_TAG, ns, value)
+        return result
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
