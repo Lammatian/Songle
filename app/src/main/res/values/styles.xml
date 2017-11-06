@@ -32,7 +32,7 @@
     <!-- Button style -->
     <style name="MyButton" parent="android:Widget.Button">
         <item name="android:textColor">@color/colorAccent</item>
-        <item name="android:textSize">30sp</item>
+        <!--<item name="android:textSize">30sp</item>-->
         <item name="android:textStyle">bold</item>
     </style>
 </resources>

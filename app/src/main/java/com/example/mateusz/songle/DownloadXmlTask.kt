@@ -37,9 +37,10 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
 
         // parse XML
         var parser = XMLParser()
-        return parser.parse(stream).joinToString(", ")
 
-        //return result.toString()
+        val result = parser.isUpToDate(stream) ?: return "No updates"
+
+        return result.joinToString(", ")
     }
 
     @Throws(IOException::class)

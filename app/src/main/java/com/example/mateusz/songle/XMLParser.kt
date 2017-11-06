@@ -16,6 +16,21 @@ class XMLParser {
     private val ns: String? = null
 
     @Throws(XmlPullParserException::class, IOException::class)
+    fun isUpToDate(input: InputStream): List<Song>? {
+        input.use {
+            val parser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(input, null)
+            parser.nextTag()
+            parser.require(XmlPullParser.START_TAG, ns, "Songs")
+            if (parser.getAttributeValue(0) == "2017-10-09T10:00:33.775+01:00[Europe/London]")
+                return null
+
+            return readFeed(parser)
+        }
+    }
+
+    @Throws(XmlPullParserException::class, IOException::class)
     fun parse(input: InputStream): List<Song> {
         input.use {
             val parser = Xml.newPullParser()
