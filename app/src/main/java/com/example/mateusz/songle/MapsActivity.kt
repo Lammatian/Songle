@@ -73,42 +73,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map1.kml")
+        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map5.kml")
 
         // Works!
-        // This definitely doesn't need to be this complicated
-        testText.text = parsed.get()
-        // TODO: Separate return for Map and Songs
-        points = parsed.get().split(';').map{it.substring(17).split(',').subList(0, 2).map{it.toDouble()}.toDoubleArray()}
+        points = (parsed.get() as List<MapPoint>).map { it.point }
 
-//        testText.text = """1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//"""
+        testText.text = """1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+2
+3
+4
+5
+6
+7
+8
+9
+"""
 
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)

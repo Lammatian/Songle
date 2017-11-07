@@ -17,25 +17,25 @@ interface DownloadCompleteListener{
 
 class DownloadXmlTask(private val caller: DownloadCompleteListener,
                       private val summaryPref: Boolean) :
-        AsyncTask<String, Void, String>() {
+        AsyncTask<String, Void, Any>() {
 
-    override fun doInBackground(vararg urls: String): String {
-//        return try {
+    override fun doInBackground(vararg urls: String): Any {
+        return try {
             return when (urls[0]) {
                 "Song" -> loadSongsFromNetwork(urls[1])
                 "Map" -> loadMapFromNetwork(urls[1])
                 else -> "Incorrect type"
             }
-//        }
-//        catch (e: IOException) {
-//            "Unable to load content. Check your network connection"
-//        }
-//        catch (e: XmlPullParserException) {
-//            "Error parsing XML"
-//        }
+        }
+        catch (e: IOException) {
+            "Unable to load content. Check your network connection"
+        }
+        catch (e: XmlPullParserException) {
+            "Error parsing XML"
+        }
     }
 
-    private fun loadSongsFromNetwork(urlString: String): String {
+    private fun loadSongsFromNetwork(urlString: String): Any {
         //var result = StringBuilder()
         var stream = downloadUrl(urlString)
 
@@ -44,10 +44,10 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
 
         val result = parser.isUpToDate(stream) ?: return "No updates"
 
-        return result.joinToString("; ")
+        return result
     }
 
-    private fun loadMapFromNetwork(urlString: String): String {
+    private fun loadMapFromNetwork(urlString: String): List<MapPoint> {
         //var result = StringBuilder()
         var stream = downloadUrl(urlString)
 
@@ -56,7 +56,7 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
 
         val result = parser.parse(stream)
 
-        return result.joinToString("; ")
+        return result
     }
 
     @Throws(IOException::class)
@@ -74,9 +74,9 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
         return conn.inputStream
     }
 
-    override fun onPostExecute(result: String) {
+    override fun onPostExecute(result: Any?) {
         super.onPostExecute(result)
 
-        caller.onDownloadComplete(result)
+        caller.onDownloadComplete(result.toString())
     }
 }
