@@ -15,8 +15,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -28,13 +26,14 @@ import android.view.View
 import android.view.Window
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.activity_maps.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
+    private lateinit var points: List<DoubleArray>
 
     // TODO: Implement
     //region Network receiver
@@ -74,38 +73,42 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsed = DownloadXmlTask(dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
+        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map1.kml")
 
         // Works!
-        //testText.text = parsed.get()
-        testText.text = """1
-2
-3
-4
-5
-6
-7
-8
-9
-1
-2
-3
-4
-5
-6
-7
-8
-9
-1
-2
-3
-4
-5
-6
-7
-8
-9
-"""
+        // This definitely doesn't need to be this complicated
+        testText.text = parsed.get()
+        // TODO: Separate return for Map and Songs
+        points = parsed.get().split(';').map{it.substring(17).split(',').subList(0, 2).map{it.toDouble()}.toDoubleArray()}
+
+//        testText.text = """1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//"""
 
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
@@ -138,10 +141,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             println("Style not found exception thrown [onMapReady]")
         }
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        // Add a marker in ~Edinburgh and move the camera
+        val edi = LatLng(55.0, -3.0)
+        mMap.addMarker(MarkerOptions().position(edi).title("Marker in Edi"))
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(edi))
 
         try {
             // Visualise current position with a small blue circle
@@ -152,8 +155,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
+
+        placeWords(points)
     }
     //endregion
+
+    /**
+     * Places word icons on the map
+     */
+    fun placeWords(points: List<DoubleArray>) {
+        for (point in points) {
+            mMap.addMarker(MarkerOptions().position(LatLng(point[1], point[0])))
+        }
+    }
 
     //#region Menu Open/Close
     // Variable checking if menu is opened or not

@@ -20,18 +20,22 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
         AsyncTask<String, Void, String>() {
 
     override fun doInBackground(vararg urls: String): String {
-        return try {
-            loadXmlFromNetwork(urls[0])
-        }
-        catch (e: IOException) {
-            "Unable to load content. Check your network connection"
-        }
-        catch (e: XmlPullParserException) {
-            "Error parsing XML"
-        }
+//        return try {
+            return when (urls[0]) {
+                "Song" -> loadSongsFromNetwork(urls[1])
+                "Map" -> loadMapFromNetwork(urls[1])
+                else -> "Incorrect type"
+            }
+//        }
+//        catch (e: IOException) {
+//            "Unable to load content. Check your network connection"
+//        }
+//        catch (e: XmlPullParserException) {
+//            "Error parsing XML"
+//        }
     }
 
-    private fun loadXmlFromNetwork(urlString: String): String {
+    private fun loadSongsFromNetwork(urlString: String): String {
         //var result = StringBuilder()
         var stream = downloadUrl(urlString)
 
@@ -40,7 +44,19 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
 
         val result = parser.isUpToDate(stream) ?: return "No updates"
 
-        return result.joinToString(", ")
+        return result.joinToString("; ")
+    }
+
+    private fun loadMapFromNetwork(urlString: String): String {
+        //var result = StringBuilder()
+        var stream = downloadUrl(urlString)
+
+        // parse XML
+        var parser = MapParser()
+
+        val result = parser.parse(stream)
+
+        return result.joinToString("; ")
     }
 
     @Throws(IOException::class)
