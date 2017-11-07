@@ -1,77 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.widget.LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.mateusz.songle.MainActivity">
 
-    <RelativeLayout
+    <!--<RelativeLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent">-->
+
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="Choose Difficulty"-->
+            <!--android:textSize="40sp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_marginTop="100dp"/>-->
+
+        <!--&lt;!&ndash;TODO: Change to scrollable list&ndash;&gt;-->
+        <!--<Button-->
+            <!--android:id="@+id/btnCakewalk"-->
+            <!--android:layout_width="90dp"-->
+            <!--android:alpha="0.3"-->
+            <!--android:textSize="8sp"-->
+            <!--android:layout_height="30dp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:layout_above="@id/btnEasy"-->
+            <!--android:text="Cakewalk"/>-->
+
+        <!--<Button-->
+            <!--android:id="@+id/btnEasy"-->
+            <!--android:layout_width="120dp"-->
+            <!--android:alpha="0.7"-->
+            <!--android:textSize="17sp"-->
+            <!--android:layout_height="42dp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:layout_above="@+id/btnMedium"-->
+            <!--android:text="Easy"/>-->
+
+        <!--<Button-->
+            <!--android:id="@+id/btnMedium"-->
+            <!--android:layout_width="150dp"-->
+            <!--android:alpha="1"-->
+            <!--android:textSize="25sp"-->
+            <!--android:layout_height="55dp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:text="Medium"/>-->
+
+        <!--<Button-->
+            <!--android:id="@+id/btnHard"-->
+            <!--android:layout_width="120dp"-->
+            <!--android:alpha="0.7"-->
+            <!--android:textSize="17sp"-->
+            <!--android:layout_height="42dp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:layout_below="@id/btnMedium"-->
+            <!--android:text="Hard"/>-->
+
+        <!--<Button-->
+            <!--android:id="@+id/btnVHard"-->
+            <!--android:layout_width="90dp"-->
+            <!--android:alpha="0.3"-->
+            <!--android:textSize="8sp"-->
+            <!--android:layout_height="30dp"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--android:layout_below="@id/btnHard"-->
+            <!--android:text="Very hard"/>-->
+    <!--</RelativeLayout>-->
+
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose Difficulty"
-            android:textSize="40sp"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="100dp"/>
+            app:tabMode="fixed"
+            app:tabGravity="fill"/>
+    </android.support.design.widget.AppBarLayout>
 
-        <!--TODO: Change to scrollable list-->
-        <Button
-            android:id="@+id/btnCakewalk"
-            android:layout_width="90dp"
-            android:alpha="0.3"
-            android:textSize="8sp"
-            android:layout_height="30dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_above="@id/btnEasy"
-            android:text="Cakewalk"/>
+    <android.support.v4.view.ViewPager
+        android:id="@+id/viewpager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-        <Button
-            android:id="@+id/btnEasy"
-            android:layout_width="120dp"
-            android:alpha="0.7"
-            android:textSize="17sp"
-            android:layout_height="42dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_above="@+id/btnMedium"
-            android:text="Easy"/>
-
-        <Button
-            android:id="@+id/btnMedium"
-            android:layout_width="150dp"
-            android:alpha="1"
-            android:textSize="25sp"
-            android:layout_height="55dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:text="Medium"/>
-
-        <Button
-            android:id="@+id/btnHard"
-            android:layout_width="120dp"
-            android:alpha="0.7"
-            android:textSize="17sp"
-            android:layout_height="42dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_below="@id/btnMedium"
-            android:text="Hard"/>
-
-        <Button
-            android:id="@+id/btnVHard"
-            android:layout_width="90dp"
-            android:alpha="0.3"
-            android:textSize="8sp"
-            android:layout_height="30dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_below="@id/btnHard"
-            android:text="Very hard"/>
-    </RelativeLayout>
-
-</android.support.constraint.ConstraintLayout>
+</android.widget.LinearLayout>

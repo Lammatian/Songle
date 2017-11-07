@@ -20,10 +20,12 @@ import com.google.android.gms.maps.model.MarkerOptions
 import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.support.v4.content.ContextCompat
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -75,11 +77,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val parsed = DownloadXmlTask(dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
 
         // Works!
-        testText.text = parsed.get()
+        //testText.text = parsed.get()
+        testText.text = """1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+2
+3
+4
+5
+6
+7
+8
+9
+"""
 
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(networkReceiver, filter)
+
+        // Font changing
+        val tf = Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
+        FontChangeCrawler(tf).replaceFonts(this.mainMapView)
     }
     //endregion
 
@@ -98,7 +132,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         try {
             // Set map style
-            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.style_json))
+            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.custom_style2))
         }
         catch (e: Resources.NotFoundException) {
             println("Style not found exception thrown [onMapReady]")
@@ -244,9 +278,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //#endregion
 
     fun showWords(view: View) {
-        if (words.visibility == View.INVISIBLE)
-            words.visibility = View.VISIBLE
+        if (wordView.visibility == View.INVISIBLE)
+            wordView.visibility = View.VISIBLE
         else
-            words.visibility = View.INVISIBLE
+            wordView.visibility = View.INVISIBLE
+    }
+
+    fun toMain(view: View) {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
     }
 }
