@@ -33,7 +33,13 @@ import kotlinx.android.synthetic.main.activity_maps.*
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
-    private lateinit var points: List<DoubleArray>
+    private lateinit var points: List<MapPoint>
+    private val desToIcon: HashMap<String, Int> = hashMapOf(
+            "unclassified" to R.mipmap.wht_blank,
+            "boring" to R.mipmap.ylw_blank,
+            "notboring" to R.mipmap.ylw_circle,
+            "interesting" to R.mipmap.orange_diamond,
+            "veryinteresting" to R.mipmap.red_stars)
 
     // TODO: Implement
     //region Network receiver
@@ -73,10 +79,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map5.kml")
+        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map1.kml")
 
         // Works!
-        points = (parsed.get() as List<MapPoint>).map { it.point }
+        points = parsed.get() as List<MapPoint>
 
         testText.text = """1
 2
@@ -140,7 +146,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Add a marker in ~Edinburgh and move the camera
         val edi = LatLng(55.0, -3.0)
-        mMap.addMarker(MarkerOptions().position(edi).title("Marker in Edi"))
+        mMap.addMarker(MarkerOptions()
+                .position(edi)
+                .title("Marker in Edi")
+                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.red_stars)))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(edi))
 
         try {
@@ -153,6 +162,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
+        // Place the words on the map
         placeWords(points)
     }
     //endregion
@@ -160,9 +170,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     /**
      * Places word icons on the map
      */
-    fun placeWords(points: List<DoubleArray>) {
-        for (point in points) {
-            mMap.addMarker(MarkerOptions().position(LatLng(point[1], point[0])))
+    fun placeWords(points: List<MapPoint>) {
+        for (p in points) {
+            mMap.addMarker(MarkerOptions()
+                    .position(LatLng(p.point[1], p.point[0]))
+                    .icon(BitmapDescriptorFactory.fromResource(desToIcon[p.description]!!)))
         }
     }
 

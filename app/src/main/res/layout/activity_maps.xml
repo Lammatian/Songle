@@ -59,6 +59,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_lightbulb_outline_black_48px"
+                android:minWidth="40dp"
+                android:minHeight="40dp"
                 android:background="@color/colorAccent" />
         </RelativeLayout>
 
