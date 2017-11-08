@@ -1,12 +1,10 @@
 package com.example.mateusz.songle
 
+import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import com.google.android.gms.location.LocationServices
@@ -19,21 +17,32 @@ import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.location.Location
+import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
+import android.widget.TextView
+import com.google.android.gms.location.FusedLocationProviderApi
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.dialog_statistics.view.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var points: List<MapPoint>
+    private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
+    private lateinit var tf: Typeface
     private val desToIcon: HashMap<String, Int> = hashMapOf(
             "unclassified" to R.mipmap.wht_blank,
             "boring" to R.mipmap.ylw_blank,
@@ -79,46 +88,49 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsed = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map1.kml")
+        val parsedMap = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
+        val parsedLyrics = DownloadXmlTask(dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
 
         // Works!
-        points = parsed.get() as List<MapPoint>
+        points = parsedMap.get() as List<MapPoint>
 
-        testText.text = """1
-2
-3
-4
-5
-6
-7
-8
-9
-1
-2
-3
-4
-5
-6
-7
-8
-9
-1
-2
-3
-4
-5
-6
-7
-8
-9
-"""
+        testText.text = parsedLyrics.get().toString()
+
+//        testText.text = """1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//1
+//2
+//3
+//4
+//5
+//6
+//7
+//8
+//9
+//"""
 
         // Register BroadcastReceiver to track connection changes.
+        tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(networkReceiver, filter)
 
         // Font changing
-        val tf = Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
     }
     //endregion
@@ -145,7 +157,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Add a marker in ~Edinburgh and move the camera
-        val edi = LatLng(55.0, -3.0)
+        val edi = LatLng(55.945, -3.19)
         mMap.addMarker(MarkerOptions()
                 .position(edi)
                 .title("Marker in Edi")
@@ -162,6 +174,60 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
+        // Ask for location services if needed
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                AlertDialog.Builder(this)
+                        .setTitle("Location permission")
+                        .setMessage("In order to use the app, you need to provide location")
+                        .setPositiveButton("OK", object: DialogInterface.OnClickListener {
+                            override fun onClick(p0: DialogInterface?, p1: Int) {
+                                ActivityCompat.requestPermissions(this@MapsActivity,
+                                        Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
+                                        99)
+                            }
+                        })
+                        .create()
+                        .show()
+            }
+        }
+        else {
+            ActivityCompat.requestPermissions(this,
+                    Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
+                    99)
+        }
+
+        // Set listener for click on the button
+        mMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
+            override fun onMarkerClick(marker: Marker): Boolean {
+                if (ContextCompat.checkSelfPermission(this@MapsActivity,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                    var myLoc = Location("")
+                    myLoc.latitude = edi.latitude
+                    myLoc.longitude = edi.longitude
+                    var markerLoc = Location("")
+                    markerLoc.latitude = marker.position.latitude
+                    markerLoc.longitude = marker.position.longitude
+
+                    // 10 meters from the marker to pick it up for now
+                    // TODO: Distance ignored for now
+                    //if (myLoc.distanceTo(markerLoc) < 10) {
+                        // TODO: Should show word popup
+                        var dialog = AlertDialog.Builder(this@MapsActivity)
+                        dialog.setMessage(markerToPoint[marker]!!.description)
+                        dialog.show()
+                    //}
+                }
+
+                // Whether to stop the default reaction
+                return true
+            }
+        })
+
         // Place the words on the map
         placeWords(points)
     }
@@ -172,9 +238,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     fun placeWords(points: List<MapPoint>) {
         for (p in points) {
-            mMap.addMarker(MarkerOptions()
+            var marker = mMap.addMarker(MarkerOptions()
                     .position(LatLng(p.point[1], p.point[0]))
                     .icon(BitmapDescriptorFactory.fromResource(desToIcon[p.description]!!)))
+
+            markerToPoint[marker] = p
         }
     }
 
@@ -310,5 +378,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun toMain(view: View) {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
+    }
+
+    fun showStats(view: View) {
+        var mBuilder = AlertDialog.Builder(this)
+        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+        var dialogColor = ColorDrawable(resources.getColor(R.color.colorPopUp))
+        dialog.window.setBackgroundDrawable(dialogColor)
+
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainStatView))
+
+        dialog.show()
+    }
+
+    fun showHelp(view: View) {
+        var mBuilder = AlertDialog.Builder(this)
+        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
+        val mStatistics = mView.findViewById<View>(R.id.statistics) as TextView
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+        dialog.show()
+    }
+
+    fun showGiveUp(view: View) {
+        var mBuilder = AlertDialog.Builder(this)
+        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
+        val mStatistics = mView.findViewById<View>(R.id.statistics) as TextView
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+        dialog.show()
     }
 }

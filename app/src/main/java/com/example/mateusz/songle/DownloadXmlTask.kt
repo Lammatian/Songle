@@ -3,8 +3,11 @@ package com.example.mateusz.songle
 import android.content.res.Resources
 import android.os.AsyncTask
 import org.xmlpull.v1.XmlPullParserException
+import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
+import java.io.InputStreamReader
+import java.lang.IllegalStateException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -24,6 +27,7 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
             return when (urls[0]) {
                 "Song" -> loadSongsFromNetwork(urls[1])
                 "Map" -> loadMapFromNetwork(urls[1])
+                "Lyrics" -> loadLyricsFromNetwork(urls[1])
                 else -> "Incorrect type"
             }
         }
@@ -57,6 +61,24 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
         val result = parser.parse(stream)
 
         return result
+    }
+
+    private fun loadLyricsFromNetwork(urlString: String): String {
+        var stream = BufferedReader(InputStreamReader(downloadUrl(urlString)))
+        var result = StringBuilder()
+        var currentLine: String = stream.readLine()
+
+        while(currentLine != null) {
+            result.append(currentLine).append("\n")
+            try {
+                currentLine = stream.readLine()
+            }
+            catch (e: IllegalStateException) {
+                break
+            }
+        }
+
+        return result.toString()
     }
 
     @Throws(IOException::class)
