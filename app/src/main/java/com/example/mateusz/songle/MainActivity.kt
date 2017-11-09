@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        toolbar = findViewById(R.id.toolbar)
+        /*toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
@@ -29,10 +29,10 @@ class MainActivity : AppCompatActivity() {
         setupViewPager(viewPager)
 
         tabLayout = findViewById(R.id.tabs)
-        tabLayout!!.setupWithViewPager(viewPager)
+        tabLayout!!.setupWithViewPager(viewPager)*/
     }
 
-    fun setupViewPager(viewPager: ViewPager?) {
+    /*fun setupViewPager(viewPager: ViewPager?) {
         var adapter = ViewPagerAdapter(supportFragmentManager)
         adapter.addFragment(FragmentTest(), "ONE")
         adapter.addFragment(FragmentTest(), "TWO")
@@ -61,5 +61,5 @@ class MainActivity : AppCompatActivity() {
         override fun getPageTitle(position: Int): CharSequence {
             return mFragmentTitleList[position]
         }
-    }
+    }*/
 }

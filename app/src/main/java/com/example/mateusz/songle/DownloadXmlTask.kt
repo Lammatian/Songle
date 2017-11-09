@@ -64,21 +64,9 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
     }
 
     private fun loadLyricsFromNetwork(urlString: String): String {
-        var stream = BufferedReader(InputStreamReader(downloadUrl(urlString)))
-        var result = StringBuilder()
-        var currentLine: String = stream.readLine()
+        var stream = downloadUrl(urlString)
 
-        while(currentLine != null) {
-            result.append(currentLine).append("\n")
-            try {
-                currentLine = stream.readLine()
-            }
-            catch (e: IllegalStateException) {
-                break
-            }
-        }
-
-        return result.toString()
+        return stream.bufferedReader().use {it.readText()}
     }
 
     @Throws(IOException::class)

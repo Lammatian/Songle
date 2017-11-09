@@ -26,11 +26,11 @@
 
     <!-- TextView style -->
     <style name="MyTextView" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/colorPrimaryText</item>
     </style>
 
     <!-- Button style -->
     <style name="MyButton" parent="android:Widget.Button">
-        <!--<item name="android:textSize">30sp</item>-->
         <item name="android:textStyle">bold</item>
     </style>
 
@@ -44,5 +44,10 @@
 
         <!-- inactive track color (30% transparency) -->
         <item name="android:colorForeground">#42221f1f</item>
+    </style>
+
+    <!-- Custom dialog -->
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dialog_bg</item>
     </style>
 </resources>

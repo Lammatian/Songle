@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:id="@+id/mainGiveUpView"
+    android:padding="20dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/giveUpText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_margin="10dp"
+        android:textSize="30sp"
+        android:text="Are you giving up?"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_yes"
+            android:background="@drawable/choice_circle"
+            android:layout_marginEnd="40dp"
+            android:padding="10dp"
+            app:layout_anchorGravity="left|bottom"
+            app:layout_anchor="@id/giveUpText"/>
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_no"
+            android:background="@drawable/no_circle"
+            android:padding="10dp"
+            app:layout_anchorGravity="right|bottom"
+            app:layout_anchor="@id/giveUpText"/>
+    </LinearLayout>
+
+</LinearLayout>

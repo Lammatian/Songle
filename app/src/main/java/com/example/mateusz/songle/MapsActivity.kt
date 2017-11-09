@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
+import android.app.ActionBar
 import android.content.*
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -21,11 +22,11 @@ import android.graphics.drawable.ColorDrawable
 import android.location.Location
 import android.location.LocationManager
 import android.net.ConnectivityManager
+import android.os.CountDownTimer
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
-import android.view.MotionEvent
-import android.view.View
-import android.view.Window
+import android.text.Html
+import android.view.*
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
@@ -36,11 +37,17 @@ import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.dialog_statistics.view.*
 
-
+/**
+ * Created by mateusz on 03/11/17.
+ * ic_treasure taken from https://openclipart.org/detail/257257/chromatic-musical-notes-typography-no-background
+ * ic_idea taken from https://thenounproject.com/term/idea/62335/, work of Takao Umehara
+ */
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var points: List<MapPoint>
+    private lateinit var treasure: Marker
+    private lateinit var treasureLoc: Location
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private val desToIcon: HashMap<String, Int> = hashMapOf(
@@ -93,45 +100,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Works!
         points = parsedMap.get() as List<MapPoint>
-
         testText.text = parsedLyrics.get().toString()
 
-//        testText.text = """1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//1
-//2
-//3
-//4
-//5
-//6
-//7
-//8
-//9
-//"""
-
         // Register BroadcastReceiver to track connection changes.
-        tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(networkReceiver, filter)
 
         // Font changing
+        tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
+
+        // Choose difficulty
+        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+        var mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainDiffView))
+
+        dialog.show()
     }
     //endregion
 
@@ -157,7 +145,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Add a marker in ~Edinburgh and move the camera
-        val edi = LatLng(55.945, -3.19)
+        val edi = LatLng(55.946, -3.1888)
         mMap.addMarker(MarkerOptions()
                 .position(edi)
                 .title("Marker in Edi")
@@ -206,6 +194,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (ContextCompat.checkSelfPermission(this@MapsActivity,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+                    // Get location of player and marker
+                    // TODO: Get proper location of the player
                     var myLoc = Location("")
                     myLoc.latitude = edi.latitude
                     myLoc.longitude = edi.longitude
@@ -216,14 +206,60 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     // 10 meters from the marker to pick it up for now
                     // TODO: Distance ignored for now
                     //if (myLoc.distanceTo(markerLoc) < 10) {
-                        // TODO: Should show word popup
-                        var dialog = AlertDialog.Builder(this@MapsActivity)
-                        dialog.setMessage(markerToPoint[marker]!!.description)
-                        dialog.show()
+                    // Word found popup dialog with custom style
+                    var mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+                    var mView = layoutInflater.inflate(R.layout.dialog_wordfound, null)
+
+                    mBuilder.setView(mView)
+                    var dialog = mBuilder.create()
+
+                    // Popup title
+                    var title = TextView(dialog.context)
+                    title.typeface = tf
+                    title.text = "You found a new word!"
+                    title.textSize = 20f
+                    title.gravity = Gravity.CENTER_HORIZONTAL
+                    dialog.setCustomTitle(title)
+
+                    // Set word place in the popup
+                    mView.findViewById<TextView>(R.id.lineNumber).text = "35"
+                    mView.findViewById<TextView>(R.id.placeNumber).text = "1"
+                    mView.findViewById<TextView>(R.id.wordFound).text = "Scaramouche"
+
+                    // Set dialog width and height
+                    // TODO: Doesn't work properly with width
+                    var lp = WindowManager.LayoutParams()
+                    lp.copyFrom(dialog.window.attributes)
+                    lp.width = 600
+                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT
+
+                    // Change font for the view
+                    FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWordView))
+
+                    dialog.show()
+                    // Attributes have to be changed after showing for some reason
+                    dialog.window.attributes = lp
                     //}
+
+                    // TODO: This should spawn a imagebutton it WordFeed
+//                    object: CountDownTimer(5000, 5000) {
+//
+//                        override fun onTick(p0: Long) {
+//                            wordView.visibility = View.VISIBLE
+//                        }
+//
+//                        override fun onFinish() {
+//                            wordView.visibility = View.INVISIBLE
+//                        }
+//                    }.start()
+
+                    // TODO: Remove this shit from here
+                    if (myLoc.distanceTo(treasureLoc) < 100) {
+                        treasure.isVisible = true
+                    }
                 }
 
-                // Whether to stop the default reaction
+                // Stop the default reaction to clicking a marker
                 return true
             }
         })
@@ -244,6 +280,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             markerToPoint[marker] = p
         }
+
+        treasure = mMap.addMarker(MarkerOptions()
+                .position(LatLng(points[0].point[1] + 0.001, points[0].point[0] + 0.001))
+                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_treasure))
+                .visible(false))
+
+        treasureLoc = Location("")
+        treasureLoc.latitude = treasure.position.latitude
+        treasureLoc.longitude = treasure.position.longitude
     }
 
     //#region Menu Open/Close
@@ -381,13 +426,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun showStats(view: View) {
-        var mBuilder = AlertDialog.Builder(this)
+        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
         var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
 
         mBuilder.setView(mView)
         var dialog = mBuilder.create()
-        var dialogColor = ColorDrawable(resources.getColor(R.color.colorPopUp))
-        dialog.window.setBackgroundDrawable(dialogColor)
 
         FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainStatView))
 
@@ -395,22 +438,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun showHelp(view: View) {
-        var mBuilder = AlertDialog.Builder(this)
-        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
-        val mStatistics = mView.findViewById<View>(R.id.statistics) as TextView
+        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+        var mView = layoutInflater.inflate(R.layout.dialog_help, null)
+
+        var helpString = """
+&#8226; Walk up to <font color='#FFC107'>markers</font> <br/>
+&#8226; Collect <font color='#FFC107'>words</font> <br/>
+&#8226; Guess the <font color='#FFC107'>song</font> <br/>
+&#8226; Be <font color='#FFC107'>quick</font> and <font color='#FFC107'>picky</font> <br/>
+&#8226; Get the best <font color='#FFC107'>score</font> <br/>
+&#8226; If stuck, <font color='#FFC107'>restart</font> <br/>
+&#8226; Try to find the <font color='#ff0000'>treasure</font> :)"""
+
+        mView.findViewById<TextView>(R.id.helpText).text = Html.fromHtml(helpString)
 
         mBuilder.setView(mView)
         var dialog = mBuilder.create()
+
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainHelpView))
+
         dialog.show()
     }
 
     fun showGiveUp(view: View) {
-        var mBuilder = AlertDialog.Builder(this)
-        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
-        val mStatistics = mView.findViewById<View>(R.id.statistics) as TextView
+        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+        var mView = layoutInflater.inflate(R.layout.dialog_giveup, null)
 
         mBuilder.setView(mView)
         var dialog = mBuilder.create()
+
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGiveUpView))
+
         dialog.show()
     }
 }

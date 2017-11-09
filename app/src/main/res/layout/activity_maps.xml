@@ -28,7 +28,8 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
+            android:layout_height="wrap_content"
+            android:layout_margin="3dp">
 
             <TextView
                 android:id="@+id/listType"
@@ -58,10 +59,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:src="@drawable/ic_lightbulb_outline_black_48px"
-                android:minWidth="40dp"
-                android:minHeight="40dp"
-                android:background="@color/colorAccent" />
+                android:src="@drawable/ic_idea"
+                android:padding="3dp"
+                android:background="@color/colorPrimary" />
         </RelativeLayout>
 
         <ScrollView
@@ -73,7 +73,7 @@
             <TextView
                 android:id="@+id/testText"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:textColor="@color/colorPrimaryText"
                 android:text="Test"/>
         </ScrollView>
@@ -131,6 +131,7 @@
         android:layout_marginEnd="13dp"
         android:clickable="true"
         android:focusable="true"
+        android:onClick="showHelp"
         android:visibility="invisible"
         app:fabSize="mini"
         app:layout_anchor="@id/dummy2"
@@ -174,11 +175,67 @@
         android:layout_marginEnd="13dp"
         android:clickable="true"
         android:focusable="true"
-        android:onClick="toMain"
+        android:onClick="showGiveUp"
         android:visibility="invisible"
         app:fabSize="mini"
         app:layout_anchor="@id/dummy4"
         app:layout_anchorGravity="top"/>
+    <!--endregion-->
+
+    <!--TODO: Elevation-->
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="60dp"
+        android:visibility="invisible"
+        android:src="@drawable/ic_audiotrack_black_24px"
+        android:background="@drawable/rectangle"
+        android:padding="10dp"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="110dp"
+        android:visibility="invisible"
+        android:text="Scaramouche [35,1]"
+        android:textColor="@color/colorPrimaryText"
+        android:background="@drawable/rectangle"
+        android:padding="10dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="110dp"
+        android:visibility="invisible"
+        android:src="@drawable/ic_audiotrack_black_24px"
+        android:background="@drawable/rectangle"
+        android:padding="10dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="160dp"
+        android:visibility="invisible"
+        android:src="@drawable/ic_audiotrack_black_24px"
+        android:background="@drawable/rectangle"
+        android:padding="10dp"/>
+
+    <!--region Time-->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:text="10:56"
+        android:textColor="@color/colorPrimaryText"
+        android:layout_margin="10dp"/>
     <!--endregion-->
 
 </android.support.design.widget.CoordinatorLayout>
