@@ -100,7 +100,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Works!
         points = parsedMap.get() as List<MapPoint>
-        testText.text = parsedLyrics.get().toString()
+//        testText.text = parsedLyrics.get().toString()
+        testText.text = """Scaramouche x2
+come x1
+Figaro x1
+Galileo x1
+Gotta x1
+late x1
+Thunderbolt x1
+truth x1"""
 
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
@@ -194,6 +202,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (ContextCompat.checkSelfPermission(this@MapsActivity,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+                    if (marker == treasure) {
+                        showTreasure()
+                        return true
+                    }
+
                     // Get location of player and marker
                     // TODO: Get proper location of the player
                     var myLoc = Location("")
@@ -222,15 +235,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     dialog.setCustomTitle(title)
 
                     // Set word place in the popup
-                    mView.findViewById<TextView>(R.id.lineNumber).text = "35"
-                    mView.findViewById<TextView>(R.id.placeNumber).text = "1"
+                    mView.findViewById<TextView>(R.id.place).text = "[35,1]"
                     mView.findViewById<TextView>(R.id.wordFound).text = "Scaramouche"
 
                     // Set dialog width and height
                     // TODO: Doesn't work properly with width
                     var lp = WindowManager.LayoutParams()
                     lp.copyFrom(dialog.window.attributes)
-                    lp.width = 600
+                    lp.width = 650
                     lp.height = WindowManager.LayoutParams.WRAP_CONTENT
 
                     // Change font for the view
@@ -468,6 +480,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         var dialog = mBuilder.create()
 
         FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGiveUpView))
+
+        dialog.show()
+    }
+
+    fun makeGuess(view: View) {
+        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+        var mView = layoutInflater.inflate(R.layout.dialog_guess, null)
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+
+        // Popup title
+        var title = TextView(dialog.context)
+        title.typeface = tf
+        title.text = "What song is this?"
+        title.textSize = 24f
+        title.gravity = Gravity.CENTER_HORIZONTAL
+        dialog.setCustomTitle(title)
+
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGuessView))
+
+        dialog.show()
+    }
+
+    fun showTreasure() {
+        var mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        var mView = layoutInflater.inflate(R.layout.dialog_treasure, null)
+
+        mBuilder.setView(mView)
+        var dialog = mBuilder.create()
+
+        // Change font for the view
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainTreasureView))
 
         dialog.show()
     }

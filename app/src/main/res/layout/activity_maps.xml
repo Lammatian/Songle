@@ -60,6 +60,9 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_idea"
+                android:clickable="true"
+                android:focusable="true"
+                android:onClick="makeGuess"
                 android:padding="3dp"
                 android:background="@color/colorPrimary" />
         </RelativeLayout>
@@ -67,7 +70,7 @@
         <ScrollView
             android:id="@+id/wordsScroll"
             android:layout_width="match_parent"
-            android:layout_height="300dp"
+            android:layout_height="150dp"
             android:padding="10dp" >
 
             <TextView
@@ -199,7 +202,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_marginEnd="10dp"
-        android:layout_marginTop="110dp"
+        android:layout_marginTop="60dp"
         android:visibility="invisible"
         android:text="Scaramouche [35,1]"
         android:textColor="@color/colorPrimaryText"
