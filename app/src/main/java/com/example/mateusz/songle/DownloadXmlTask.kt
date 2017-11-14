@@ -41,32 +41,37 @@ class DownloadXmlTask(private val caller: DownloadCompleteListener,
 
     private fun loadSongsFromNetwork(urlString: String): Any {
         //var result = StringBuilder()
-        var stream = downloadUrl(urlString)
+        val stream = downloadUrl(urlString)
 
         // parse XML
-        var parser = XMLParser()
+        val parser = XMLParser()
 
-        val result = parser.isUpToDate(stream) ?: return "No updates"
-
-        return result
+        return parser.isUpToDate(stream) ?: return "No updates"
     }
 
     private fun loadMapFromNetwork(urlString: String): List<MapPoint> {
-        //var result = StringBuilder()
-        var stream = downloadUrl(urlString)
+        val stream = downloadUrl(urlString)
 
         // parse XML
-        var parser = MapParser()
+        val parser = MapParser()
 
-        val result = parser.parse(stream)
-
-        return result
+        return parser.parse(stream)
     }
 
-    private fun loadLyricsFromNetwork(urlString: String): String {
-        var stream = downloadUrl(urlString)
+    private fun loadLyricsFromNetwork(urlString: String): List<List<String>> {
+        // TODO: Punctuation parsing?
+        val stream = downloadUrl(urlString)
 
-        return stream.bufferedReader().use {it.readText()}
+        // get lyrics of the song
+        val lyrics = stream.bufferedReader().use{it.readText()}
+
+        // split by lines
+        val byLine = lyrics.split("\n")
+
+        // split by spaces
+        val bySpace = byLine.map{it.split(" ")}
+
+        return bySpace
     }
 
     @Throws(IOException::class)

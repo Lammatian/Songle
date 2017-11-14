@@ -35,14 +35,14 @@
                 android:id="@+id/listType"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="List"
+                android:text="@string/listView"
                 android:layout_centerVertical="true"
                 android:layout_alignParentStart="true" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Count"
+                android:text="@string/countView"
                 android:layout_centerVertical="true"
                 android:layout_toEndOf="@id/wordViewType" />
 
@@ -70,15 +70,14 @@
         <ScrollView
             android:id="@+id/wordsScroll"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="300dp"
             android:padding="10dp" >
 
             <TextView
-                android:id="@+id/testText"
+                android:id="@+id/wordViewText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/colorPrimaryText"
-                android:text="Test"/>
+                android:textColor="@color/colorPrimaryText" />
         </ScrollView>
     </LinearLayout>
 
@@ -94,7 +93,7 @@
         android:onClick="showWords"
         app:fabSize="normal"
         android:src="@drawable/ic_format_list_numbered_black_24px"
-        android:backgroundTint="@color/colorMainFAB"/>
+        app:backgroundTint="@color/colorMainFAB"/>
 
     <View
         android:id="@+id/dummy"
@@ -109,7 +108,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:src="@drawable/ic_add_black_24px"
-        android:backgroundTint="@color/colorMainFAB"
+        app:backgroundTint="@color/colorMainFAB"
         android:layout_marginEnd="10dp"
         android:clickable="true"
         android:focusable="true"
@@ -185,7 +184,8 @@
         app:layout_anchorGravity="top"/>
     <!--endregion-->
 
-    <!--TODO: Elevation-->
+    <!--region Word Feed testing-->
+    <!--TODO: Elevation, content description?-->
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -230,6 +230,7 @@
         android:src="@drawable/ic_audiotrack_black_24px"
         android:background="@drawable/rectangle"
         android:padding="10dp"/>
+    <!--endregion-->
 
     <!--region Time-->
     <TextView

@@ -7,6 +7,16 @@
     android:orientation="vertical">
 
     <TextView
+        android:id="@+id/title"
+        android:text="@string/newWord"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:textColor="@color/colorSecondaryText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
         android:id="@+id/wordFound"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -16,7 +26,7 @@
         android:textColor="@color/colorAccent"
         android:textSize="18sp"
         android:layout_gravity="center_horizontal"
-        android:text="word" />
+        android:text="@string/wordTemplate"/>
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -28,7 +38,7 @@
             android:id="@+id/place"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="[, ]"/>
+            android:text="@string/placeTemplate"/>
 
     </LinearLayout>
 

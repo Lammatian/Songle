@@ -28,7 +28,7 @@ class MapParser {
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
-    fun readFeed(parser: XmlPullParser): List<MapPoint> {
+    private fun readFeed(parser: XmlPullParser): List<MapPoint> {
         val points = ArrayList<MapPoint>()
         parser.require(XmlPullParser.START_TAG, ns, "kml")
         parser.nextTag()
@@ -93,7 +93,7 @@ class MapParser {
     private fun readCoordinates(parser: XmlPullParser, value: String): DoubleArray {
         parser.require(XmlPullParser.START_TAG, ns, value)
         parser.nextTag()
-        var result = readValue(parser, "coordinates").split(',').map{it.toDouble()}.toDoubleArray()
+        val result = readValue(parser, "coordinates").split(',').map{it.toDouble()}.toDoubleArray()
         parser.nextTag()
         parser.require(XmlPullParser.END_TAG, ns, value)
         return result

@@ -48,6 +48,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var points: List<MapPoint>
     private lateinit var treasure: Marker
     private lateinit var treasureLoc: Location
+    private lateinit var lyrics: List<List<String>>
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private val desToIcon: HashMap<String, Int> = hashMapOf(
@@ -79,7 +80,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var networkReceiver = NetworkReceiver()
 
-    class dcl : DownloadCompleteListener {
+    class Dcl : DownloadCompleteListener {
         override fun onDownloadComplete(result: String) {
             print(result)
         }
@@ -95,13 +96,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsedMap = DownloadXmlTask(dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
-        val parsedLyrics = DownloadXmlTask(dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
+        val parsedMap = DownloadXmlTask(Dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
+        val parsedLyrics = DownloadXmlTask(Dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
 
         // Works!
+        lyrics = parsedLyrics.get() as List<List<String>>
         points = parsedMap.get() as List<MapPoint>
-//        testText.text = parsedLyrics.get().toString()
-        testText.text = """Scaramouche x2
+
+        wordViewText.text = """Scaramouche x2
 come x1
 Figaro x1
 Galileo x1
@@ -119,15 +121,7 @@ truth x1"""
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
 
         // Choose difficulty
-        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
-
-        mBuilder.setView(mView)
-        var dialog = mBuilder.create()
-
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainDiffView))
-
-        dialog.show()
+        showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
     }
     //endregion
 
@@ -154,10 +148,10 @@ truth x1"""
 
         // Add a marker in ~Edinburgh and move the camera
         val edi = LatLng(55.946, -3.1888)
-        mMap.addMarker(MarkerOptions()
-                .position(edi)
-                .title("Marker in Edi")
-                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.red_stars)))
+//        mMap.addMarker(MarkerOptions()
+//                .position(edi)
+//                .title("Marker in Edi")
+//                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.red_stars)))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(edi))
 
         try {
@@ -169,7 +163,9 @@ truth x1"""
 
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
+        //mMap.isMyLocationEnabled = true
 
+        // TODO: First if statement doesn't work
         // Ask for location services if needed
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -202,6 +198,7 @@ truth x1"""
                 if (ContextCompat.checkSelfPermission(this@MapsActivity,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+                    // Sort out treasure separately
                     if (marker == treasure) {
                         showTreasure()
                         return true
@@ -226,23 +223,17 @@ truth x1"""
                     mBuilder.setView(mView)
                     var dialog = mBuilder.create()
 
-                    // Popup title
-                    var title = TextView(dialog.context)
-                    title.typeface = tf
-                    title.text = "You found a new word!"
-                    title.textSize = 20f
-                    title.gravity = Gravity.CENTER_HORIZONTAL
-                    dialog.setCustomTitle(title)
-
                     // Set word place in the popup
-                    mView.findViewById<TextView>(R.id.place).text = "[35,1]"
-                    mView.findViewById<TextView>(R.id.wordFound).text = "Scaramouche"
+                    val point = markerToPoint[marker]
+                    mView.findViewById<TextView>(R.id.place).text = "[" + point!!.name.joinToString(",") + "]"
+                    mView.findViewById<TextView>(R.id.wordFound).text = lyrics[point.name[0]-1][point.name[1]-1]
 
+                    marker.remove()
                     // Set dialog width and height
                     // TODO: Doesn't work properly with width
                     var lp = WindowManager.LayoutParams()
                     lp.copyFrom(dialog.window.attributes)
-                    lp.width = 650
+                    lp.width = 700
                     lp.height = WindowManager.LayoutParams.WRAP_CONTENT
 
                     // Change font for the view
@@ -253,7 +244,7 @@ truth x1"""
                     dialog.window.attributes = lp
                     //}
 
-                    // TODO: This should spawn a imagebutton it WordFeed
+                    // TODO: This should spawn a imagebutton in WordFeed
 //                    object: CountDownTimer(5000, 5000) {
 //
 //                        override fun onTick(p0: Long) {
@@ -265,7 +256,7 @@ truth x1"""
 //                        }
 //                    }.start()
 
-                    // TODO: Remove this shit from here
+                    // TODO: Remove this shit from here to somewhere else
                     if (myLoc.distanceTo(treasureLoc) < 100) {
                         treasure.isVisible = true
                     }
@@ -425,35 +416,17 @@ truth x1"""
     }
     //#endregion
 
-    fun showWords(view: View) {
-        if (wordView.visibility == View.INVISIBLE)
-            wordView.visibility = View.VISIBLE
-        else
-            wordView.visibility = View.INVISIBLE
-    }
-
-    fun toMain(view: View) {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
-    }
-
+    //region Dialogs
     fun showStats(view: View) {
-        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_statistics, null)
-
-        mBuilder.setView(mView)
-        var dialog = mBuilder.create()
-
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainStatView))
-
-        dialog.show()
+        showDialog(R.layout.dialog_statistics, R.id.mainStatView)
     }
 
+    // TODO: Can be abstracted as well?
     fun showHelp(view: View) {
-        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_help, null)
+        val mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_help, null)
 
-        var helpString = """
+        val helpString = """
 &#8226; Walk up to <font color='#FFC107'>markers</font> <br/>
 &#8226; Collect <font color='#FFC107'>words</font> <br/>
 &#8226; Guess the <font color='#FFC107'>song</font> <br/>
@@ -465,7 +438,7 @@ truth x1"""
         mView.findViewById<TextView>(R.id.helpText).text = Html.fromHtml(helpString)
 
         mBuilder.setView(mView)
-        var dialog = mBuilder.create()
+        val dialog = mBuilder.create()
 
         FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainHelpView))
 
@@ -473,47 +446,52 @@ truth x1"""
     }
 
     fun showGiveUp(view: View) {
-        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_giveup, null)
-
-        mBuilder.setView(mView)
-        var dialog = mBuilder.create()
-
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGiveUpView))
-
-        dialog.show()
+        showDialog(R.layout.dialog_giveup, R.id.mainGiveUpView)
     }
 
     fun makeGuess(view: View) {
-        var mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_guess, null)
-
-        mBuilder.setView(mView)
-        var dialog = mBuilder.create()
-
-        // Popup title
-        var title = TextView(dialog.context)
-        title.typeface = tf
-        title.text = "What song is this?"
-        title.textSize = 24f
-        title.gravity = Gravity.CENTER_HORIZONTAL
-        dialog.setCustomTitle(title)
-
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGuessView))
-
-        dialog.show()
+        showDialog(R.layout.dialog_guess, R.id.mainGuessView, "What song is this?", 24f)
     }
 
     fun showTreasure() {
-        var mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
-        var mView = layoutInflater.inflate(R.layout.dialog_treasure, null)
+        showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
+    }
+
+    private fun showDialog(layout: Int, mainView: Int, title: String = "", titleSize: Float = 0f) {
+        // Set up the dialog
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(layout, null)
 
         mBuilder.setView(mView)
-        var dialog = mBuilder.create()
+        val dialog = mBuilder.create()
 
-        // Change font for the view
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainTreasureView))
+        // If title is not empty, set it
+        if (title != "") {
+            val viewTitle = TextView(dialog.context)
+            viewTitle.typeface = tf
+            viewTitle.text = title
+            viewTitle.textSize = titleSize
+            viewTitle.gravity = Gravity.CENTER_HORIZONTAL
+            dialog.setCustomTitle(viewTitle)
+        }
 
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(mainView))
+
+        // Show the dialog
         dialog.show()
+    }
+    //endregion
+
+    fun showWords(view: View) {
+        if (wordView.visibility == View.INVISIBLE)
+            wordView.visibility = View.VISIBLE
+        else
+            wordView.visibility = View.INVISIBLE
+    }
+
+    fun toMain(view: View) {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
     }
 }

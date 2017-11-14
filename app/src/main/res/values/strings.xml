@@ -2,9 +2,26 @@
     <string name="app_name">Songle</string>
     <string name="title_activity_maps">Map</string>
     <string name="statistics">Statistics</string>
-    <string name="start_game">Start tour!</string>
-    <string name="clicks">Clicks:</string>
-    <string name="test">Test</string>
-    <string name="help">Help</string>
     <string name="title">Songle</string>
+    <string name="help">&#8226; Walk up to <font color='#FFC107'>markers</font> <br/>
+&#8226; Collect <font color='#FFC107'>words</font> <br/>
+&#8226; Guess the <font color='#FFC107'>song</font> <br/>
+&#8226; Be <font color='#FFC107'>quick</font> and <font color='#FFC107'>picky</font> <br/>
+&#8226; Get the best <font color='#FFC107'>score</font> <br/>
+&#8226; If stuck, <font color='#FFC107'>restart</font> <br/>
+&#8226; Try to find the <font color='#ff0000'>treasure</font> :)</string>
+    <string name="listView">List</string>
+    <string name="countView">Count</string>
+    <string name="newWord">You found a new word!</string>
+    <string name="placeTemplate">[, ]</string>
+    <string name="wordTemplate">word</string>
+    <string name="giveUp">Are you giving up?</string>
+    <string name="welcome">Welcome to Songle!</string>
+    <string name="gl">Good luck!</string>
+    <string name="bestScore">Best score</string>
+    <string name="noGames">Games played</string>
+    <string name="noWins">Games won</string>
+    <string name="totalTime">Total time in game</string>
+    <string name="averageScore">Average score per round</string>
+    <string name="lastScore">Last game score</string>
 </resources>

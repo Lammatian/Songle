@@ -15,7 +15,7 @@
         android:gravity="center_horizontal"
         android:layout_margin="10dp"
         android:textSize="30sp"
-        android:text="Are you giving up?"/>
+        android:text="@string/giveUp"/>
 
     <LinearLayout
         android:layout_width="match_parent"

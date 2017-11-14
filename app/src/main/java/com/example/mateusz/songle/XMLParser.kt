@@ -42,7 +42,7 @@ class XMLParser {
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
-    fun readFeed(parser: XmlPullParser): List<Song> {
+    private fun readFeed(parser: XmlPullParser): List<Song> {
         val songs = ArrayList<Song>()
         parser.require(XmlPullParser.START_TAG, ns, "Songs")
 

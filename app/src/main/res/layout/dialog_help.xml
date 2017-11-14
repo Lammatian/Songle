@@ -11,7 +11,7 @@
         android:id="@+id/statistics"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Welcome to Songle!"
+        android:text="@string/welcome"
         android:textColor="@color/colorAccent"
         android:textSize="30sp"
         android:padding="5dp"
@@ -27,7 +27,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Good luck!"
+        android:text="@string/gl"
         android:gravity="center_horizontal"
         android:textSize="30sp"
         android:textColor="@color/colorPrimary"/>
