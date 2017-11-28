@@ -38,6 +38,9 @@ import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.dialog_statistics.*
 import kotlinx.android.synthetic.main.dialog_statistics.view.*
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
 
 /**
  * Created by mateusz on 03/11/17.
@@ -59,6 +62,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var treasureLoc: Location
     private lateinit var lyrics: List<List<String>>
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var guessPenalty: List<Double>
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private val desToIcon: HashMap<String, Int> = hashMapOf(
@@ -130,12 +134,21 @@ truth x1"""
         tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
 
+        // Shared preferences test
+        // TODO: Improve
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val editor = sharedPreferences.edit()
         editor.putInt("Best score", 2000)
         editor.apply()
 
         val bs = sharedPreferences.getInt("Best score", 0)
+
+        // Guess penalty reading and scoring test
+        val inputStream = BufferedReader(InputStreamReader(assets.open("helpers/guesspen.txt")))
+        var read = inputStream.readText()
+        read = read.substring(1, read.length-1)
+        guessPenalty = read.split(",").map{it.toDouble()}
+        wordViewText.text = score(0, 1, 21, "veryhard", 1000).toString()
 
         // Choose difficulty
         showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
@@ -519,7 +532,8 @@ truth x1"""
         startActivity(intent)
     }
 
-    fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: String, guesses: Int): Double {
+    //region Scoring
+    fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: String, guesses: Int): Int {
         // Apply scoring functions to arguments
         // T(time)
         val T = when {
@@ -529,7 +543,7 @@ truth x1"""
             else              -> 0.0
         }
         // W(words)
-        val words = (wordsNeeded as Double) / wordsTotal
+        val words = (wordsNeeded.toDouble()) / wordsTotal
         val W = when {
             words in 0.0..0.05 -> 1.0
             words in 0.05..0.5 -> 1.0/(36.0*words) + 4.0/9
@@ -546,11 +560,12 @@ truth x1"""
             else       -> 0
         }
         // G(guesses, difficulty)
-        // TODO: Precalculation of guessPenalty
-        //val G = D / 42.3376 * guessPenalty[guesses]
-        val G = 0
+        // Any guess after the 1000th is counted the same as 1000th
+        val g = Math.min(1000, guesses)
+        val G = D / 42.3376 * guessPenalty[g]
 
         // Score(time, words, difficulty, guesses)
-        return T * W * D - G
+        return (T * W * D - G).toInt()
     }
+    //endregion
 }
