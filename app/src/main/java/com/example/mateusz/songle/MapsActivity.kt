@@ -23,6 +23,7 @@ import android.location.Location
 import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.CountDownTimer
+import android.preference.PreferenceManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.text.Html
@@ -35,6 +36,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.maps.model.*
 import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.dialog_statistics.*
 import kotlinx.android.synthetic.main.dialog_statistics.view.*
 
 /**
@@ -42,6 +44,13 @@ import kotlinx.android.synthetic.main.dialog_statistics.view.*
  * ic_treasure taken from https://openclipart.org/detail/257257/chromatic-musical-notes-typography-no-background
  * ic_idea taken from https://thenounproject.com/term/idea/62335/, work of Takao Umehara
  */
+
+// Map boundaries
+private const val minLat = 55.942617
+private const val maxLat = 55.946233
+private const val minLng = -3.192473
+private const val maxLng = -3.184319
+
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
@@ -49,6 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var treasure: Marker
     private lateinit var treasureLoc: Location
     private lateinit var lyrics: List<List<String>>
+    private lateinit var sharedPreferences: SharedPreferences
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private val desToIcon: HashMap<String, Int> = hashMapOf(
@@ -119,6 +129,13 @@ truth x1"""
         // Font changing
         tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val editor = sharedPreferences.edit()
+        editor.putInt("Best score", 2000)
+        editor.apply()
+
+        val bs = sharedPreferences.getInt("Best score", 0)
 
         // Choose difficulty
         showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
@@ -276,6 +293,7 @@ truth x1"""
      * Places word icons on the map
      */
     fun placeWords(points: List<MapPoint>) {
+        // Place all the word markers on the map
         for (p in points) {
             var marker = mMap.addMarker(MarkerOptions()
                     .position(LatLng(p.point[1], p.point[0]))
@@ -284,14 +302,20 @@ truth x1"""
             markerToPoint[marker] = p
         }
 
+        // Create random position for the treasure marker
+        var treasureLat = minLat + Math.random()*(maxLat - minLat)
+        var treasureLng = minLng + Math.random()*(maxLng - minLng)
+
+        // Add treasure marker
         treasure = mMap.addMarker(MarkerOptions()
-                .position(LatLng(points[0].point[1] + 0.001, points[0].point[0] + 0.001))
+                .position(LatLng(treasureLat, treasureLng))
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_treasure))
                 .visible(false))
 
+        // Save treasure location for easier management
         treasureLoc = Location("")
-        treasureLoc.latitude = treasure.position.latitude
-        treasureLoc.longitude = treasure.position.longitude
+        treasureLoc.latitude = treasureLat
+        treasureLoc.longitude = treasureLng
     }
 
     //#region Menu Open/Close
@@ -493,5 +517,40 @@ truth x1"""
     fun toMain(view: View) {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
+    }
+
+    fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: String, guesses: Int): Double {
+        // Apply scoring functions to arguments
+        // T(time)
+        val T = when {
+            time in 0..180    -> 1.0
+            time in 180..1800 -> 100.0/time + 4.0/9
+            time > 1800       -> 0.5
+            else              -> 0.0
+        }
+        // W(words)
+        val words = (wordsNeeded as Double) / wordsTotal
+        val W = when {
+            words in 0.0..0.05 -> 1.0
+            words in 0.05..0.5 -> 1.0/(36.0*words) + 4.0/9
+            words > 0.5        -> 0.5
+            else               -> 0.0
+        }
+        // D(difficulty)
+        val D = when (difficulty){
+            "cakewalk" -> 400
+            "easy"     -> 500
+            "medium"   -> 700
+            "hard"     -> 900
+            "veryhard" -> 1000
+            else       -> 0
+        }
+        // G(guesses, difficulty)
+        // TODO: Precalculation of guessPenalty
+        //val G = D / 42.3376 * guessPenalty[guesses]
+        val G = 0
+
+        // Score(time, words, difficulty, guesses)
+        return T * W * D - G
     }
 }
