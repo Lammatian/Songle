@@ -65,6 +65,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var guessPenalty: List<Double>
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
+    private var lifelongStatistics: HashMap<String, String> = hashMapOf(
+            "Best score" to "0",
+            "Games played" to "0",
+            "Games won" to "0",
+            "Total time in game" to "0:00:00",
+            "Average score" to "0",
+            "Last game score" to "0"
+    )
     private val desToIcon: HashMap<String, Int> = hashMapOf(
             "unclassified" to R.mipmap.wht_blank,
             "boring" to R.mipmap.ylw_blank,
@@ -110,12 +118,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // Try downloading xml
-        val parsedMap = DownloadXmlTask(Dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
-        val parsedLyrics = DownloadXmlTask(Dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
+        //val parsedMap = DownloadXmlTask(Dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
+        //val parsedLyrics = DownloadXmlTask(Dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
 
         // Works!
-        lyrics = parsedLyrics.get() as List<List<String>>
-        points = parsedMap.get() as List<MapPoint>
+        //lyrics = parsedLyrics.get() as List<List<String>>
+        //points = parsedMap.get() as List<MapPoint>
+        points = ArrayList<MapPoint>(0)
 
         wordViewText.text = """Scaramouche x2
 come x1
@@ -136,19 +145,23 @@ truth x1"""
 
         // Shared preferences test
         // TODO: Improve
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         val editor = sharedPreferences.edit()
-        editor.putInt("Best score", 2000)
+        editor.putString("Best score", "2000")
         editor.apply()
 
-        val bs = sharedPreferences.getInt("Best score", 0)
+        // Statistics initialization
+        for (stat in lifelongStatistics.keys) {
+            if (sharedPreferences.getString(stat, "") != "")
+                lifelongStatistics[stat] = sharedPreferences.getString(stat, "")
+        }
 
         // Guess penalty reading and scoring test
         val inputStream = BufferedReader(InputStreamReader(assets.open("helpers/guesspen.txt")))
         var read = inputStream.readText()
         read = read.substring(1, read.length-1)
         guessPenalty = read.split(",").map{it.toDouble()}
-        wordViewText.text = score(0, 1, 21, "veryhard", 1000).toString()
+        wordViewText.text = score(0, 1, 10, "veryhard", 5).toString()
 
         // Choose difficulty
         showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
@@ -178,12 +191,9 @@ truth x1"""
 
         // Add a marker in ~Edinburgh and move the camera
         val edi = LatLng(55.946, -3.1888)
-//        mMap.addMarker(MarkerOptions()
-//                .position(edi)
-//                .title("Marker in Edi")
-//                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.red_stars)))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(edi))
 
+        // Current position on the map
         try {
             // Visualise current position with a small blue circle
             mMap.isMyLocationEnabled = true
@@ -225,8 +235,21 @@ truth x1"""
         // Set listener for click on the button
         mMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
             override fun onMarkerClick(marker: Marker): Boolean {
+                // TODO: Why is checking location permissions here?
                 if (ContextCompat.checkSelfPermission(this@MapsActivity,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    // Get location of player and marker
+                    // TODO: Get proper location of the player
+                    val myLoc = Location("")
+                    myLoc.latitude = edi.latitude
+                    myLoc.longitude = edi.longitude
+                    val markerLoc = Location("")
+                    markerLoc.latitude = marker.position.latitude
+                    markerLoc.longitude = marker.position.longitude
+
+                    // Check if player can pick up the word from current distance
+                    if (myLoc.distanceTo(markerLoc) > 10)
+                        return true
 
                     // Sort out treasure separately
                     if (marker == treasure) {
@@ -234,45 +257,44 @@ truth x1"""
                         return true
                     }
 
-                    // Get location of player and marker
-                    // TODO: Get proper location of the player
-                    var myLoc = Location("")
-                    myLoc.latitude = edi.latitude
-                    myLoc.longitude = edi.longitude
-                    var markerLoc = Location("")
-                    markerLoc.latitude = marker.position.latitude
-                    markerLoc.longitude = marker.position.longitude
-
-                    // 10 meters from the marker to pick it up for now
-                    // TODO: Distance ignored for now
-                    //if (myLoc.distanceTo(markerLoc) < 10) {
                     // Word found popup dialog with custom style
-                    var mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
-                    var mView = layoutInflater.inflate(R.layout.dialog_wordfound, null)
-
-                    mBuilder.setView(mView)
-                    var dialog = mBuilder.create()
-
-                    // Set word place in the popup
+                    // TODO: Wordfound dialog of appropriate width
                     val point = markerToPoint[marker]
-                    mView.findViewById<TextView>(R.id.place).text = "[" + point!!.name.joinToString(",") + "]"
-                    mView.findViewById<TextView>(R.id.wordFound).text = lyrics[point.name[0]-1][point.name[1]-1]
+                    val text = hashMapOf(
+                            R.id.place to "[" + point!!.name.joinToString(",") + "]",
+                            R.id.wordFound to lyrics[point.name[0]-1][point.name[1]-1]
+                    )
 
-                    marker.remove()
-                    // Set dialog width and height
-                    // TODO: Doesn't work properly with width
-                    var lp = WindowManager.LayoutParams()
-                    lp.copyFrom(dialog.window.attributes)
-                    lp.width = 700
-                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT
+                    showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
 
-                    // Change font for the view
-                    FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWordView))
-
-                    dialog.show()
-                    // Attributes have to be changed after showing for some reason
-                    dialog.window.attributes = lp
-                    //}
+                    //region Old wordfound dialog code
+//                    val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+//                    val mView = layoutInflater.inflate(R.layout.dialog_wordfound, null)
+//
+//                    mBuilder.setView(mView)
+//                    val dialog = mBuilder.create()
+//
+//                    // Set word position in the popup
+//                    val point = markerToPoint[marker]
+//                    mView.findViewById<TextView>(R.id.place).text = "[" + point!!.name.joinToString(",") + "]"
+//                    mView.findViewById<TextView>(R.id.wordFound).text = lyrics[point.name[0]-1][point.name[1]-1]
+//
+//                    marker.remove()
+//                    // Set dialog width and height
+//                    // TODO: Doesn't work properly with width
+//                    // TODO: Additional parameters to showDialog?
+//                    var lp = WindowManager.LayoutParams()
+//                    lp.copyFrom(dialog.window.attributes)
+//                    lp.width = 700
+//                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT
+//
+//                    // Change font for the view
+//                    FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWordView))
+//
+//                    dialog.show()
+//                    // Attributes have to be changed after showing for some reason
+//                    dialog.window.attributes = lp
+                    //endregion
 
                     // TODO: This should spawn a imagebutton in WordFeed
 //                    object: CountDownTimer(5000, 5000) {
@@ -455,14 +477,19 @@ truth x1"""
 
     //region Dialogs
     fun showStats(view: View) {
-        showDialog(R.layout.dialog_statistics, R.id.mainStatView)
+        val text = hashMapOf(
+                R.id.statBestScore to lifelongStatistics["Best score"]!!,
+                R.id.statGamesPlayed to lifelongStatistics["Games played"]!!,
+                R.id.statGamesWon to lifelongStatistics["Games won"]!!,
+                R.id.statTimeInGame to lifelongStatistics["Total time in game"]!!,
+                R.id.statAverageScore to lifelongStatistics["Average score"]!!,
+                R.id.statLastGameScore to lifelongStatistics["Last game score"]!!
+        )
+
+        showDialog(R.layout.dialog_statistics, R.id.mainStatView, texts = text)
     }
 
-    // TODO: Can be abstracted as well?
     fun showHelp(view: View) {
-        val mBuilder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        val mView = layoutInflater.inflate(R.layout.dialog_help, null)
-
         val helpString = """
 &#8226; Walk up to <font color='#FFC107'>markers</font> <br/>
 &#8226; Collect <font color='#FFC107'>words</font> <br/>
@@ -472,14 +499,11 @@ truth x1"""
 &#8226; If stuck, <font color='#FFC107'>restart</font> <br/>
 &#8226; Try to find the <font color='#ff0000'>treasure</font> :)"""
 
-        mView.findViewById<TextView>(R.id.helpText).text = Html.fromHtml(helpString)
+        val text = hashMapOf(
+                R.id.helpText to helpString
+        )
 
-        mBuilder.setView(mView)
-        val dialog = mBuilder.create()
-
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainHelpView))
-
-        dialog.show()
+        showDialog(R.layout.dialog_help, R.id.mainHelpView, texts = text)
     }
 
     fun showGiveUp(view: View) {
@@ -494,7 +518,7 @@ truth x1"""
         showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
     }
 
-    private fun showDialog(layout: Int, mainView: Int, title: String = "", titleSize: Float = 0f) {
+    private fun showDialog(layout: Int, mainView: Int, title: String = "", titleSize: Float = 0f, texts: HashMap<Int, String>? = null) {
         // Set up the dialog
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(layout, null)
@@ -510,6 +534,13 @@ truth x1"""
             viewTitle.textSize = titleSize
             viewTitle.gravity = Gravity.CENTER_HORIZONTAL
             dialog.setCustomTitle(viewTitle)
+        }
+
+        // Set texts of all textviews
+        if (texts != null) {
+            for ((id, text) in texts) {
+                mView.findViewById<TextView>(id).text = Html.fromHtml(text)
+            }
         }
 
         // Change font for the dialog
@@ -568,4 +599,21 @@ truth x1"""
         return (T * W * D - G).toInt()
     }
     //endregion
+
+    // Implementation of Dice string similarity algorithm
+    // TODO: Move to separate class
+    fun stringSimilarity(s1: String, s2: String): Double {
+        val p1 = HashSet<String>()
+        val p2 = HashSet<String>()
+
+        for (i: Int in 0..s1.length-2) {
+            p1.add(s1.substring(i, i+2))
+        }
+
+        for (i: Int in 0..s2.length-2) {
+            p2.add(s2.substring(i, i+2))
+        }
+
+        return 2.0*(p1.intersect(p2).size) / (p1.size + p2.size)
+    }
 }
