@@ -2,7 +2,6 @@ package com.example.mateusz.songle
 
 import java.util.*
 import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 /**
  * Created by mateusz on 02/12/17.
@@ -21,11 +20,12 @@ enum class WordValue {
     VERYINTERESTING
 }
 
-data class Word(val word: String, val place: IntArray, val interest: WordValue)
+data class Word(val word: String, val interest: WordValue)
 
-class WordsFound(lyrics: ArrayList<ArrayList<Word>>) {
+class WordsFound(lyrics: ArrayList<ArrayList<String>>, wordsInGame: HashMap<IntArray, Word>) {
 
     // TODO: Word 'interestingness' as enum
+    private val wordsInGame = wordsInGame
     private var wordsList: ArrayList<ArrayList<String>> = ArrayList(lyrics.size)
     private var wordsCount: HashMap<WordValue, HashMap<String, Int>> = hashMapOf(
             WordValue.VERYINTERESTING to hashMapOf(),
@@ -43,14 +43,16 @@ class WordsFound(lyrics: ArrayList<ArrayList<Word>>) {
     }
 
     // Add a word both to the list and the count
-    fun addWord(word: Word) {
-        wordsList[word.place[0]][word.place[1]] = word.word
+    fun addWord(place: IntArray) {
+        val newWord = wordsInGame[place]
+
+        wordsList[place[0]][place[1]] = newWord!!.word
 
         // Check if word already appeared or not
-        if (wordsCount[word.interest]!!.containsKey(word.word))
-            wordsCount[word.interest]!![word.word] = wordsCount[word.interest]!![word.word]!! + 1
+        if (wordsCount[newWord.interest]!!.containsKey(newWord.word))
+            wordsCount[newWord.interest]!![newWord.word] = wordsCount[newWord.interest]!![newWord.word]!! + 1
         else
-            wordsCount[word.interest]!![word.word] = 1
+            wordsCount[newWord.interest]!![newWord.word] = 1
     }
 
     // Add whole line

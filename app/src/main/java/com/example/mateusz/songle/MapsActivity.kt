@@ -44,6 +44,7 @@ import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 /**
  * Created by mateusz on 03/11/17.
@@ -153,7 +154,7 @@ Is the battle cry"""
 
         lyrics = lyricsText.split("\n").map{it.split(" ")}
         points = ArrayList<MapPoint>(0)
-        wordsFound = WordsFound(ArrayList(0))
+        wordsFound = WordsFound(ArrayList(0), hashMapOf())
 
         wordViewText.text = """Scaramouche x2
 come x1
@@ -298,7 +299,7 @@ truth x1"""
 
                     showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
                     // TODO: Implement properly
-                    updateWithNewWord(Word("", IntArray(0), WordValue.UNCLASSIFIED))
+                    updateWithNewWord(arrayOf(1, 2).toIntArray())
                     marker.remove()
 
                     //region Old wordfound dialog code
@@ -612,9 +613,9 @@ truth x1"""
         wordViewText.text = wordsFound.getWords(viewType)
     }
 
-    fun updateWithNewWord(word: Word) {
+    fun updateWithNewWord(place: IntArray) {
         // Update word found database
-        wordsFound.addWord(word)
+        wordsFound.addWord(place)
         // Update text shown to user
         wordViewText.text = wordsFound.getWords(viewType)
     }
