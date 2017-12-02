@@ -16,6 +16,7 @@
         android:layout_height="match_parent"
         tools:context="com.example.mateusz.songle.MapsActivity" />
 
+    <!--region WordView -->
     <LinearLayout
         android:id="@+id/wordView"
         android:layout_width="match_parent"
@@ -52,6 +53,7 @@
                 android:layout_height="wrap_content"
                 android:showText="true"
                 android:layout_centerVertical="true"
+                android:onClick="changeWordView"
                 android:layout_toEndOf="@id/listType"
                 android:theme="@style/ViewTypeSwitchStyle" />
 
@@ -62,7 +64,7 @@
                 android:src="@drawable/ic_idea"
                 android:clickable="true"
                 android:focusable="true"
-                android:onClick="makeGuess"
+                android:onClick="showGuessWindow"
                 android:padding="3dp"
                 android:background="@color/colorPrimary" />
         </RelativeLayout>
@@ -80,6 +82,7 @@
                 android:textColor="@color/colorPrimaryText" />
         </ScrollView>
     </LinearLayout>
+    <!--endregion-->
 
     <!--region Menu-->
     <android.support.design.widget.FloatingActionButton

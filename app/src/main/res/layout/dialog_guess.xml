@@ -7,6 +7,7 @@
     android:orientation="horizontal">
 
     <EditText
+        android:id="@+id/guessText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@+id/guess"
@@ -21,6 +22,7 @@
         android:layout_centerVertical="true"
         android:layout_margin="10dp"
         android:src="@drawable/ic_guess_48px"
+        android:onClick="makeGuess"
         android:background="@drawable/circle"/>
 
 </RelativeLayout>

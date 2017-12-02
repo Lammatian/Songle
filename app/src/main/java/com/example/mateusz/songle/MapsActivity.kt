@@ -30,6 +30,7 @@ import android.text.Html
 import android.view.*
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
+import android.widget.EditText
 import android.widget.TextView
 import com.google.android.gms.location.FusedLocationProviderApi
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -41,6 +42,8 @@ import kotlinx.android.synthetic.main.dialog_statistics.view.*
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by mateusz on 03/11/17.
@@ -63,6 +66,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var lyrics: List<List<String>>
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var guessPenalty: List<Double>
+    private lateinit var wordsFound: WordsFound
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private var lifelongStatistics: HashMap<String, String> = hashMapOf(
@@ -79,6 +83,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             "notboring" to R.mipmap.ylw_circle,
             "interesting" to R.mipmap.orange_diamond,
             "veryinteresting" to R.mipmap.red_stars)
+    private var viewType: ViewType = ViewType.LIST
 
     // TODO: Implement
     //region Network receiver
@@ -124,7 +129,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Works!
         //lyrics = parsedLyrics.get() as List<List<String>>
         //points = parsedMap.get() as List<MapPoint>
+        val lyricsText = """Just one more time before I go
+I'll let you know
+That all this time I've been afraid
+I wouldn't let it show
+Nobody can save me now
+No
+Nobody can save me now
+
+Stars are only visible in darkness
+Fear is ever-changing and evolving
+And I
+I feel poison inside
+And I
+I feel so alive
+
+Nobody can save me now
+The king is crowned
+It's do or die
+Nobody can save me now
+The only sound
+Is the battle cry"""
+
+        lyrics = lyricsText.split("\n").map{it.split(" ")}
         points = ArrayList<MapPoint>(0)
+        wordsFound = WordsFound(ArrayList(0))
 
         wordViewText.text = """Scaramouche x2
 come x1
@@ -248,17 +277,19 @@ truth x1"""
                     markerLoc.longitude = marker.position.longitude
 
                     // Check if player can pick up the word from current distance
-                    if (myLoc.distanceTo(markerLoc) > 10)
+                    if (myLoc.distanceTo(markerLoc) > 1000)
                         return true
 
                     // Sort out treasure separately
                     if (marker == treasure) {
                         showTreasure()
+                        // TODO: Proper implementation
+                        wordsFound.addLine(ArrayList(0), 0)
                         return true
                     }
 
                     // Word found popup dialog with custom style
-                    // TODO: Wordfound dialog of appropriate width
+                    // TODO: Dialog of appropriate width
                     val point = markerToPoint[marker]
                     val text = hashMapOf(
                             R.id.place to "[" + point!!.name.joinToString(",") + "]",
@@ -266,6 +297,9 @@ truth x1"""
                     )
 
                     showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
+                    // TODO: Implement properly
+                    updateWithNewWord(Word("", IntArray(0), WordValue.UNCLASSIFIED))
+                    marker.remove()
 
                     //region Old wordfound dialog code
 //                    val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
@@ -510,7 +544,7 @@ truth x1"""
         showDialog(R.layout.dialog_giveup, R.id.mainGiveUpView)
     }
 
-    fun makeGuess(view: View) {
+    fun showGuessWindow(view: View) {
         showDialog(R.layout.dialog_guess, R.id.mainGuessView, "What song is this?", 24f)
     }
 
@@ -561,6 +595,28 @@ truth x1"""
     fun toMain(view: View) {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
+    }
+
+    fun makeGuess(view: View) {
+        // TODO: Get guessText value somehow
+        //val guess = view.findViewById<EditText>(R.id.guessText).selectAll().toString()
+        wordViewText.text = "Testing"
+    }
+
+    fun changeWordView(view: View) {
+        if (viewType == ViewType.LIST)
+            viewType = ViewType.COUNT
+        else
+            viewType = ViewType.LIST
+
+        wordViewText.text = wordsFound.getWords(viewType)
+    }
+
+    fun updateWithNewWord(word: Word) {
+        // Update word found database
+        wordsFound.addWord(word)
+        // Update text shown to user
+        wordViewText.text = wordsFound.getWords(viewType)
     }
 
     //region Scoring
