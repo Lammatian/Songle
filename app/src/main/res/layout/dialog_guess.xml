@@ -10,12 +10,12 @@
         android:id="@+id/guessText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@+id/guess"
+        android:layout_toStartOf="@+id/makeGuess"
         android:layout_margin="10dp"
         android:layout_centerVertical="true"/>
 
     <ImageButton
-        android:id="@+id/guess"
+        android:id="@+id/makeGuess"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"

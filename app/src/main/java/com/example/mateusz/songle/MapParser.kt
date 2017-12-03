@@ -10,6 +10,7 @@ import java.io.InputStream
  * Created by mateusz on 07/11/17.
  */
 
+// TODO: Description as WordValue?
 data class MapPoint(val point: DoubleArray, val description: String, val name: IntArray)
 
 class MapParser {

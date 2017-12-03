@@ -31,6 +31,7 @@ import android.view.*
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import com.google.android.gms.location.FusedLocationProviderApi
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -58,6 +59,15 @@ private const val maxLat = 55.946233
 private const val minLng = -3.192473
 private const val maxLng = -3.184319
 
+// Difficulties
+enum class Difficulty {
+    Cakewalk,
+    Easy,
+    Medium,
+    Hard,
+    VeryHard
+}
+
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
@@ -68,6 +78,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var guessPenalty: List<Double>
     private lateinit var wordsFound: WordsFound
+    private lateinit var wordsInGame: HashMap<IntArray, Word>
+    private lateinit var currentSongTitle: String
+    private lateinit var difficulty: Difficulty
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private var lifelongStatistics: HashMap<String, String> = hashMapOf(
@@ -84,7 +97,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             "notboring" to R.mipmap.ylw_circle,
             "interesting" to R.mipmap.orange_diamond,
             "veryinteresting" to R.mipmap.red_stars)
-    private var viewType: ViewType = ViewType.LIST
+    private val difficultyToNumber: HashMap<Difficulty, Int> = hashMapOf(
+            Difficulty.Cakewalk to 5,
+            Difficulty.Easy to 4,
+            Difficulty.Medium to 3,
+            Difficulty.Hard to 2,
+            Difficulty.VeryHard to 1
+    )
+    private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
+    private var viewType: ViewType = ViewType.List
 
     // TODO: Implement
     //region Network receiver
@@ -123,48 +144,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Try downloading xml
-        //val parsedMap = DownloadXmlTask(Dcl(), false).execute("Map", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
-        //val parsedLyrics = DownloadXmlTask(Dcl(), false).execute("Lyrics", "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
-
-        // Works!
-        //lyrics = parsedLyrics.get() as List<List<String>>
-        //points = parsedMap.get() as List<MapPoint>
-        val lyricsText = """Just one more time before I go
-I'll let you know
-That all this time I've been afraid
-I wouldn't let it show
-Nobody can save me now
-No
-Nobody can save me now
-
-Stars are only visible in darkness
-Fear is ever-changing and evolving
-And I
-I feel poison inside
-And I
-I feel so alive
-
-Nobody can save me now
-The king is crowned
-It's do or die
-Nobody can save me now
-The only sound
-Is the battle cry"""
-
-        lyrics = lyricsText.split("\n").map{it.split(" ")}
-        points = ArrayList<MapPoint>(0)
-        wordsFound = WordsFound(ArrayList(0), hashMapOf())
-
-        wordViewText.text = """Scaramouche x2
-come x1
-Figaro x1
-Galileo x1
-Gotta x1
-late x1
-Thunderbolt x1
-truth x1"""
-
         // Register BroadcastReceiver to track connection changes.
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(networkReceiver, filter)
@@ -191,14 +170,55 @@ truth x1"""
         var read = inputStream.readText()
         read = read.substring(1, read.length-1)
         guessPenalty = read.split(",").map{it.toDouble()}
-        wordViewText.text = score(0, 1, 10, "veryhard", 5).toString()
+        wordViewText.text = score(0, 1, 10, "cakewalk", 5).toString()
 
-        // Choose difficulty
-        showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
+        // TODO: All below should be done after the difficulty is chosen
+        // Try downloading xml
+        //val parsedMap = DownloadMapTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
+        //val parsedLyrics = DownloadLyricsTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
+
+        // Works!
+        //lyrics = parsedLyrics.get() as List<List<String>>
+        //points = parsedMap.get() as List<MapPoint>
+        /*val lyricsText = """Just one more time before I go
+I'll let you know
+That all this time I've been afraid
+I wouldn't let it show
+Nobody can save me now
+No
+Nobody can save me now
+
+Stars are only visible in darkness
+Fear is ever-changing and evolving
+And I
+I feel poison inside
+And I
+I feel so alive
+
+Nobody can save me now
+The king is crowned
+It's do or die
+Nobody can save me now
+The only sound
+Is the battle cry"""
+
+        lyrics = lyricsText.split("\n").map{it.split(" ")}
+        points = ArrayList<MapPoint>(0)
+        wordsFound = WordsFound(ArrayList(0), hashMapOf())
+        currentSongTitle = "Bohemian Rhapsody"
+
+        wordViewText.text = """Scaramouche x2
+come x1
+Figaro x1
+Galileo x1
+Gotta x1
+late x1
+Thunderbolt x1
+truth x1"""*/
     }
     //endregion
 
-    //region Map ready
+    //region Map handlers
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -227,7 +247,8 @@ truth x1"""
         try {
             // Visualise current position with a small blue circle
             mMap.isMyLocationEnabled = true
-        } catch (se : SecurityException) {
+        }
+        catch (se : SecurityException) {
             println("Security exception thrown [onMapReady]")
         }
 
@@ -354,15 +375,15 @@ truth x1"""
             }
         })
 
-        // Place the words on the map
-        placeWords(points)
+        // Choose difficulty
+        // TODO: Close the dialog on click
+        showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
     }
-    //endregion
 
     /**
      * Places word icons on the map
      */
-    fun placeWords(points: List<MapPoint>) {
+    private fun placeWords(points: List<MapPoint>) {
         // Place all the word markers on the map
         for (p in points) {
             var marker = mMap.addMarker(MarkerOptions()
@@ -386,6 +407,52 @@ truth x1"""
         treasureLoc = Location("")
         treasureLoc.latitude = treasureLat
         treasureLoc.longitude = treasureLng
+    }
+    //endregion
+
+    fun startGame(view: View) {
+        // TODO: Proper difficulty setting
+        difficulty = Difficulty.VeryHard
+
+        // Get last two songs
+        // TODO: Get proper last two songs
+        var lastTwo = arrayOf(1, 2)
+
+        // Pick a different song from the above for the game
+        // TODO: Get proper amount of songs
+        var choice = Math.floor(Math.random()*24 + 1).toInt()
+
+        while (choice in lastTwo)
+            choice = Math.floor(Math.random()*24 + 1).toInt()
+
+        // Get map points for the song
+        val songsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/map" + difficultyToNumber[difficulty] + ".kml"
+        val parsedMap = DownloadMapTask(Dcl(), false).execute(songsUrl)
+        if (parsedMap.get() != null)
+            points = parsedMap.get()!!
+        // TODO: Else dialog with error
+
+        // Get lyrics for the song
+        val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/lyrics.txt"
+        val parsedLyrics = DownloadLyricsTask(Dcl(), false).execute(lyricsUrl)
+        if (parsedLyrics.get() != null)
+            lyrics = parsedLyrics.get()!!
+        // TODO: Else dialog with error
+
+        // Initialize wordsInGame
+        wordsInGame = hashMapOf()
+        for (point in points) {
+            wordsInGame.put(point.name, Word(lyrics[point.name[0]-1][point.name[1]-1],
+                    WordValue.valueOf(point.description.capitalize())))
+        }
+
+        // Initialize wordFound
+        wordsFound = WordsFound(lyrics, wordsInGame)
+
+        // Set treasure and map
+        placeWords(points)
+
+        // Start timer
     }
 
     //#region Menu Open/Close
@@ -546,7 +613,34 @@ truth x1"""
     }
 
     fun showGuessWindow(view: View) {
-        showDialog(R.layout.dialog_guess, R.id.mainGuessView, "What song is this?", 24f)
+        // Set up the dialog
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_guess, null)
+
+        mBuilder.setView(mView)
+        val dialog = mBuilder.create()
+
+        // If title is not empty, set it
+        if (title != "") {
+            val viewTitle = TextView(dialog.context)
+            viewTitle.typeface = tf
+            viewTitle.text = title
+            viewTitle.textSize = 24f
+            viewTitle.gravity = Gravity.CENTER_HORIZONTAL
+            dialog.setCustomTitle(viewTitle)
+        }
+
+        val makeGuessButton = mView.findViewById<ImageButton>(R.id.makeGuess)
+        val guessText = mView.findViewById<EditText>(R.id.guessText)
+        makeGuessButton.setOnClickListener({
+            view -> makeGuess(view, guessText.text.toString())
+        })
+
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGuessView))
+
+        // Show the dialog
+        dialog.show()
     }
 
     fun showTreasure() {
@@ -598,21 +692,28 @@ truth x1"""
         startActivity(intent)
     }
 
-    fun makeGuess(view: View) {
-        // TODO: Get guessText value somehow
-        //val guess = view.findViewById<EditText>(R.id.guessText).selectAll().toString()
-        wordViewText.text = "Testing"
+    // Check if the user guessed correctly
+    fun makeGuess(view: View, guess: String) {
+        // TODO: Dialog showing statistics if won/not
+        // If user guessed correctly, show the win dialog with statistics
+        if (stringSimilarity(guess, currentSongTitle) > 0.9)
+            wordViewText.text = "Success!"
+        // If user guessed incorrectly, show the information
+        else
+            wordViewText.text = "No"
     }
 
+    // Change the WordView layout
     fun changeWordView(view: View) {
-        if (viewType == ViewType.LIST)
-            viewType = ViewType.COUNT
+        if (viewType == ViewType.List)
+            viewType = ViewType.Count
         else
-            viewType = ViewType.LIST
+            viewType = ViewType.List
 
         wordViewText.text = wordsFound.getWords(viewType)
     }
 
+    // Put new word into the collection of found words
     fun updateWithNewWord(place: IntArray) {
         // Update word found database
         wordsFound.addWord(place)

@@ -21,12 +21,13 @@
         android:alpha="0.3"
         android:textSize="5sp"
         android:textColor="@color/colorPrimary"
+        android:onClick="startGame"
         android:layout_height="25dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_above="@id/btnEasy"
         android:layout_marginBottom="-3dp"
-        android:text="Cakewalk"/>
+        android:text="@string/diffCakewalk"/>
 
     <Button
         android:id="@+id/btnEasy"
@@ -34,23 +35,25 @@
         android:alpha="0.7"
         android:textSize="13sp"
         android:textColor="@color/colorPrimaryDark"
+        android:onClick="startGame"
         android:layout_height="35dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_above="@+id/btnMedium"
         android:layout_marginBottom="-3dp"
-        android:text="Easy"/>
+        android:text="@string/diffEasy"/>
 
     <Button
         android:id="@+id/btnMedium"
         android:layout_width="150dp"
         android:alpha="1"
         android:textSize="17sp"
-        android:layout_height="45dp"
         android:textColor="@color/colorAccent"
+        android:onClick="startGame"
+        android:layout_height="45dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text="Medium"/>
+        android:text="@string/diffMedium"/>
 
     <Button
         android:id="@+id/btnHard"
@@ -58,12 +61,13 @@
         android:alpha="0.7"
         android:textSize="13sp"
         android:textColor="#ff0000"
+        android:onClick="startGame"
         android:layout_height="35dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_below="@id/btnMedium"
         android:layout_marginTop="-3dp"
-        android:text="Hard"/>
+        android:text="@string/diffHard"/>
 
     <Button
         android:id="@+id/btnVHard"
@@ -71,11 +75,12 @@
         android:alpha="0.3"
         android:textSize="5sp"
         android:textColor="#aa0000"
+        android:onClick="startGame"
         android:layout_height="25dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_below="@id/btnHard"
         android:layout_marginTop="-3dp"
-        android:text="Very hard"/>
+        android:text="@string/diffVeryhard"/>
 
 </android.widget.LinearLayout>

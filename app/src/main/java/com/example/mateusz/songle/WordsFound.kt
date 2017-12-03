@@ -1,6 +1,7 @@
 package com.example.mateusz.songle
 
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
@@ -8,36 +9,36 @@ import kotlin.collections.HashMap
  */
 
 enum class ViewType {
-    LIST,
-    COUNT
+    List,
+    Count
 }
 
 enum class WordValue {
-    UNCLASSIFIED,
-    BORING,
-    NOTBORING,
-    INTERESTING,
-    VERYINTERESTING
+    Unclassified,
+    Boring,
+    Notboring,
+    Interesting,
+    VeryInteresting
 }
 
 data class Word(val word: String, val interest: WordValue)
 
-class WordsFound(lyrics: ArrayList<ArrayList<String>>, wordsInGame: HashMap<IntArray, Word>) {
+class WordsFound(lyrics: List<List<String>>,
+                 private val wordsInGame: HashMap<IntArray, Word>) {
 
-    // TODO: Word 'interestingness' as enum
-    private val wordsInGame = wordsInGame
     private var wordsList: ArrayList<ArrayList<String>> = ArrayList(lyrics.size)
     private var wordsCount: HashMap<WordValue, HashMap<String, Int>> = hashMapOf(
-            WordValue.VERYINTERESTING to hashMapOf(),
-            WordValue.INTERESTING to hashMapOf(),
-            WordValue.NOTBORING to hashMapOf(),
-            WordValue.BORING to hashMapOf(),
-            WordValue.UNCLASSIFIED to hashMapOf()
+            WordValue.VeryInteresting to hashMapOf(),
+            WordValue.Interesting to hashMapOf(),
+            WordValue.Notboring to hashMapOf(),
+            WordValue.Boring to hashMapOf(),
+            WordValue.Unclassified to hashMapOf()
     )
 
     // Constructor
     init {
-        for (i in 0 until lyrics.size) {
+        // TODO: Bug with wordsList size?
+        for (i in 0 until wordsList.size) {
             wordsList[i] = ArrayList(lyrics[i].size)
         }
     }
@@ -65,7 +66,7 @@ class WordsFound(lyrics: ArrayList<ArrayList<String>>, wordsInGame: HashMap<IntA
     // TODO: Better error handling
     fun getWords(type: ViewType): String {
         // As list
-        if (type == ViewType.LIST) {
+        if (type == ViewType.List) {
             var result = ""
 
             // Parse each line replacing each series of non-found words with an underscore
@@ -94,15 +95,8 @@ class WordsFound(lyrics: ArrayList<ArrayList<String>>, wordsInGame: HashMap<IntA
             return result
         }
         // As count
-        else if (type == ViewType.COUNT) {
+        else if (type == ViewType.Count) {
             // For nice result
-            val keyToString = hashMapOf(
-                    WordValue.UNCLASSIFIED to "UNCLASSIFIED",
-                    WordValue.BORING to "BORING",
-                    WordValue.NOTBORING to "NOT BORING",
-                    WordValue.INTERESTING to "INTERESTING",
-                    WordValue.VERYINTERESTING to "VERY INTERESTING"
-            )
             var result = ""
 
             // For each WordValue get all words
@@ -112,7 +106,7 @@ class WordsFound(lyrics: ArrayList<ArrayList<String>>, wordsInGame: HashMap<IntA
                     continue
 
                 // Print the value and then all words and their counts
-                result += keyToString[key] + "\n"
+                result += key.name + "\n"
                 for ((word, count) in value) {
                     result += word + " x" + count.toString() + "\n"
                 }

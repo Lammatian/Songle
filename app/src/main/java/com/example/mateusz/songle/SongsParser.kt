@@ -7,26 +7,24 @@ import java.io.IOException
 import java.io.InputStream
 
 /**
- * Created by mateusz on 03/11/17.
+ * Created by mateusz on 03/12/17.
  */
 data class Song(val number: Int, val artist: String, val title: String, val link: String)
 
-class XMLParser {
+class SongsParser {
     // namespace
     private val ns: String? = null
 
     @Throws(XmlPullParserException::class, IOException::class)
-    fun isUpToDate(input: InputStream): List<Song>? {
+    fun isUpToDate(input: InputStream, timestamp: String): Boolean {
         input.use {
             val parser = Xml.newPullParser()
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
             parser.setInput(input, null)
             parser.nextTag()
             parser.require(XmlPullParser.START_TAG, ns, "Songs")
-            if (parser.getAttributeValue(0) == "2017-10-09T10:00:33.775+01:00[Europe/London]")
-                return null
 
-            return readFeed(parser)
+            return parser.getAttributeValue(0) == timestamp
         }
     }
 
