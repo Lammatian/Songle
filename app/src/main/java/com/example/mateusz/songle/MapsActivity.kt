@@ -30,6 +30,7 @@ import android.text.Html
 import android.view.*
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
@@ -78,7 +79,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var guessPenalty: List<Double>
     private lateinit var wordsFound: WordsFound
-    private lateinit var wordsInGame: HashMap<IntArray, Word>
+    private lateinit var wordsInGame: HashMap<ArrayList<Int>, Word>
     private lateinit var currentSongTitle: String
     private lateinit var difficulty: Difficulty
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
@@ -320,7 +321,7 @@ truth x1"""*/
 
                     showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
                     // TODO: Implement properly
-                    updateWithNewWord(arrayOf(1, 2).toIntArray())
+                    updateWithNewWord(arrayListOf(point.name[0], point.name[1]))
                     marker.remove()
 
                     //region Old wordfound dialog code
@@ -376,8 +377,36 @@ truth x1"""*/
         })
 
         // Choose difficulty
-        // TODO: Close the dialog on click
-        showDialog(R.layout.dialog_difficulty, R.id.mainDiffView)
+        // TODO: Move to separate method
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
+
+        mBuilder.setView(mView)
+        val dialog = mBuilder.create()
+
+        // Get all difficulty buttons
+        val cakewalk = mView.findViewById<Button>(R.id.btnCakewalk)
+        val easy = mView.findViewById<Button>(R.id.btnEasy)
+        val medium = mView.findViewById<Button>(R.id.btnMedium)
+        val hard = mView.findViewById<Button>(R.id.btnHard)
+        val vhard = mView.findViewById<Button>(R.id.btnVHard)
+        val diffs = arrayOf(cakewalk, easy, medium, hard, vhard)
+
+        // On click listener for all buttons
+        val ocl = View.OnClickListener {
+            dialog.dismiss()
+            chooseDifficulty(it)
+        }
+
+        // Set the onClick for all buttons
+        for (view in diffs)
+            view.setOnClickListener(ocl)
+
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainDiffView))
+
+        // Show the dialog
+        dialog.show()
     }
 
     /**
@@ -386,7 +415,7 @@ truth x1"""*/
     private fun placeWords(points: List<MapPoint>) {
         // Place all the word markers on the map
         for (p in points) {
-            var marker = mMap.addMarker(MarkerOptions()
+            val marker = mMap.addMarker(MarkerOptions()
                     .position(LatLng(p.point[1], p.point[0]))
                     .icon(BitmapDescriptorFactory.fromResource(desToIcon[p.description]!!)))
 
@@ -394,8 +423,8 @@ truth x1"""*/
         }
 
         // Create random position for the treasure marker
-        var treasureLat = minLat + Math.random()*(maxLat - minLat)
-        var treasureLng = minLng + Math.random()*(maxLng - minLng)
+        val treasureLat = minLat + Math.random()*(maxLat - minLat)
+        val treasureLng = minLng + Math.random()*(maxLng - minLng)
 
         // Add treasure marker
         treasure = mMap.addMarker(MarkerOptions()
@@ -410,13 +439,11 @@ truth x1"""*/
     }
     //endregion
 
-    fun startGame(view: View) {
-        // TODO: Proper difficulty setting
-        difficulty = Difficulty.VeryHard
-
+    //region Game logic
+    private fun startGame() {
         // Get last two songs
         // TODO: Get proper last two songs
-        var lastTwo = arrayOf(1, 2)
+        val lastTwo = arrayOf(1, 2)
 
         // Pick a different song from the above for the game
         // TODO: Get proper amount of songs
@@ -424,6 +451,8 @@ truth x1"""*/
 
         while (choice in lastTwo)
             choice = Math.floor(Math.random()*24 + 1).toInt()
+
+        // Get song title
 
         // Get map points for the song
         val songsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/map" + difficultyToNumber[difficulty] + ".kml"
@@ -442,7 +471,7 @@ truth x1"""*/
         // Initialize wordsInGame
         wordsInGame = hashMapOf()
         for (point in points) {
-            wordsInGame.put(point.name, Word(lyrics[point.name[0]-1][point.name[1]-1],
+            wordsInGame.put(point.name.toCollection(ArrayList()), Word(lyrics[point.name[0]-1][point.name[1]-1],
                     WordValue.valueOf(point.description.capitalize())))
         }
 
@@ -454,6 +483,7 @@ truth x1"""*/
 
         // Start timer
     }
+    //endregion
 
     //#region Menu Open/Close
     // Variable checking if menu is opened or not
@@ -647,7 +677,11 @@ truth x1"""*/
         showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
     }
 
-    private fun showDialog(layout: Int, mainView: Int, title: String = "", titleSize: Float = 0f, texts: HashMap<Int, String>? = null) {
+    private fun showDialog(layout: Int,
+                           mainView: Int,
+                           title: String = "",
+                           titleSize: Float = 0f,
+                           texts: HashMap<Int, String>? = null) {
         // Set up the dialog
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(layout, null)
@@ -680,16 +714,29 @@ truth x1"""*/
     }
     //endregion
 
+    /**
+     * Choose difficulty and start the game
+     */
+    private fun chooseDifficulty(view: View) {
+        difficulty = when (view.id) {
+            R.id.btnCakewalk -> Difficulty.Cakewalk
+            R.id.btnEasy     -> Difficulty.Easy
+            R.id.btnMedium   -> Difficulty.Medium
+            R.id.btnHard     -> Difficulty.Hard
+            R.id.btnVHard    -> Difficulty.VeryHard
+            else             -> Difficulty.Medium
+        }
+
+        wordViewText.text = difficulty.name
+
+        startGame()
+    }
+
     fun showWords(view: View) {
         if (wordView.visibility == View.INVISIBLE)
             wordView.visibility = View.VISIBLE
         else
             wordView.visibility = View.INVISIBLE
-    }
-
-    fun toMain(view: View) {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
     }
 
     // Check if the user guessed correctly
@@ -714,7 +761,7 @@ truth x1"""*/
     }
 
     // Put new word into the collection of found words
-    fun updateWithNewWord(place: IntArray) {
+    fun updateWithNewWord(place: ArrayList<Int>) {
         // Update word found database
         wordsFound.addWord(place)
         // Update text shown to user
@@ -760,7 +807,7 @@ truth x1"""*/
 
     // Implementation of Dice string similarity algorithm
     // TODO: Move to separate class
-    fun stringSimilarity(s1: String, s2: String): Double {
+    private fun stringSimilarity(s1: String, s2: String): Double {
         val p1 = HashSet<String>()
         val p2 = HashSet<String>()
 
