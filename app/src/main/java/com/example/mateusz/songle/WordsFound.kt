@@ -1,12 +1,9 @@
 package com.example.mateusz.songle
 
-import java.util.*
+import android.text.Html
+import android.text.Spanned
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-
-/**
- * Created by mateusz on 02/12/17.
- */
 
 enum class ViewType {
     List,
@@ -34,6 +31,8 @@ class WordsFound(lyrics: List<List<String>>,
             WordValue.Boring to hashMapOf(),
             WordValue.Unclassified to hashMapOf()
     )
+    var numberOfWordsInGame: Int = wordsInGame.size
+    var numberOfWordsFound: Int = 0
 
     // Constructor
     init {
@@ -57,6 +56,8 @@ class WordsFound(lyrics: List<List<String>>,
             wordsCount[newWord.interest]!![newWord.word] = wordsCount[newWord.interest]!![newWord.word]!! + 1
         else
             wordsCount[newWord.interest]!![newWord.word] = 1
+
+        numberOfWordsFound += 1
     }
 
     // Add whole line
@@ -68,13 +69,15 @@ class WordsFound(lyrics: List<List<String>>,
     // TODO: Sort wordsCount by interest
     // TODO: Better error handling
     // TODO: In list show only lines with words?
-    fun getWords(type: ViewType): String {
+    fun getWords(type: ViewType): Spanned {
         // As list
         if (type == ViewType.List) {
             var result = ""
 
             // Parse each line replacing each series of non-found words with an underscore
-            for (line in wordsList) {
+            for (i in 0 until wordsList.size) {
+                result += (i+1).toString() + ". "
+                val line = wordsList[i]
                 var underscorePlaced = false
 
                 if (line[0] == "") {
@@ -84,26 +87,33 @@ class WordsFound(lyrics: List<List<String>>,
                 else
                     result += line[0] + " "
 
-                for (i in 1 until line.size) {
+                for (j in 1 until line.size) {
                     result += when {
-                        line[i] == "" && !underscorePlaced -> "_ "
-                        line[i] == ""                      -> ""
-                        else                               -> line[i] + " "
+                        line[j] == "" && !underscorePlaced -> "_ "
+                        line[j] == ""                      -> ""
+                        else                               -> line[j] + " "
                     }
 
                     // Check if underscore was placed recently
                     underscorePlaced = result[result.length-2] == '_'
                 }
 
-                result += "\n"
+                result += "<br>"
             }
 
-            return result
+            return Html.fromHtml(result)
         }
         // As count
         else if (type == ViewType.Count) {
             // For nice result
             var result = ""
+            val valueToColor = hashMapOf(
+                    WordValue.Unclassified to "<font color='#757575'>Unclassified</font>",
+                    WordValue.Boring to "<font color='#388E3C'>Boring</font>",
+                    WordValue.Notboring to "<font color='#FFC107'>Not Boring</font>",
+                    WordValue.Interesting to "<font color='#FF9800'>Interesting</font>",
+                    WordValue.Veryinteresting to "<font color='#AA0000'>Very Interesting</font>"
+            )
 
             // For each WordValue get all words
             for ((key, value) in wordsCount) {
@@ -112,16 +122,16 @@ class WordsFound(lyrics: List<List<String>>,
                     continue
 
                 // Print the value and then all words and their counts
-                result += key.name + "\n"
+                result += valueToColor[key] + "<br>"
                 for ((word, count) in value) {
-                    result += word + " x" + count.toString() + "\n"
+                    result += word + " x" + count.toString() + "<br>"
                 }
             }
 
-            return result
+            return Html.fromHtml(result)
         }
         else {
-            return "Error"
+            return Html.fromHtml("Error")
         }
     }
 }

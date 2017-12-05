@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Choose Difficulty"
+        android:text="@string/chooseDiff"
         android:textSize="30sp"
         android:layout_margin="10dp"
         android:gravity="center_horizontal"/>

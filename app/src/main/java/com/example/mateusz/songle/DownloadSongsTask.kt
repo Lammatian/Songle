@@ -16,7 +16,8 @@ class DownloadSongsTask(private val caller: DownloadCompleteListener,
 
     override fun doInBackground(vararg urls: String): List<Song>? {
         return try {
-            loadSongsFromNetwork(urls[0], urls[1])
+            // TODO: Timestamp
+            loadSongsFromNetwork(urls[0], "")
         }
         catch (e: IOException) {
             null
@@ -34,8 +35,9 @@ class DownloadSongsTask(private val caller: DownloadCompleteListener,
         val parser = SongsParser()
 
         // Check if songs are up to date and return empty list if so
-        if (parser.isUpToDate(stream, timestamp))
-            return emptyList()
+        // TODO: Timestamp
+        //if (parser.isUpToDate(stream, timestamp))
+        //    return emptyList()
 
         return parser.parse(stream)
     }

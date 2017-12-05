@@ -29,4 +29,8 @@
     <string name="diffMedium">Medium</string>
     <string name="diffHard">Hard</string>
     <string name="diffVeryhard">Very hard</string>
+    <string name="chooseDiff">Choose Difficulty</string>
+    <string name="timer">mm:ss</string>
+    <string name="minuteTime">%1$s:%2$s</string>
+    <string name="hourTime">%1$s:%2$s:%3$s</string>
 </resources>

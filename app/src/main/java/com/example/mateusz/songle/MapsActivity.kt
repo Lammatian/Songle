@@ -23,6 +23,8 @@ import android.location.Location
 import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.SystemClock
 import android.preference.PreferenceManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
@@ -107,6 +109,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     )
     private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
     private var viewType: ViewType = ViewType.List
+    private var numberOfGuesses: Int = 0
+    // TODO: Read from storage
+    private lateinit var songs: List<Song>
 
     // TODO: Implement
     //region Network receiver
@@ -171,8 +176,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         var read = inputStream.readText()
         read = read.substring(1, read.length-1)
         guessPenalty = read.split(",").map{it.toDouble()}
-        wordViewText.text = score(0, 1, 10, "cakewalk", 5).toString()
+        wordViewText.text = score(0, 1, 10, Difficulty.Cakewalk, 5).toString()
 
+        val parsedSongs = DownloadSongsTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
+        songs = parsedSongs.get() as List<Song>
         // TODO: All below should be done after the difficulty is chosen
         // Try downloading xml
         //val parsedMap = DownloadMapTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
@@ -441,6 +448,9 @@ truth x1"""*/
 
     //region Game logic
     private fun startGame() {
+        // Set number of guesses to 0
+        numberOfGuesses = 0
+
         // Get last two songs
         // TODO: Get proper last two songs
         val lastTwo = arrayOf(1, 2)
@@ -453,6 +463,7 @@ truth x1"""*/
             choice = Math.floor(Math.random()*24 + 1).toInt()
 
         // Get song title
+        currentSongTitle = songs[choice-1].title
 
         // Get map points for the song
         val songsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/map" + difficultyToNumber[difficulty] + ".kml"
@@ -481,7 +492,9 @@ truth x1"""*/
         // Set treasure and map
         placeWords(points)
 
-        // Start timer
+        // Start the clock
+        startTime = SystemClock.uptimeMillis()
+        handler.post(runnable)
     }
     //endregion
 
@@ -743,19 +756,27 @@ truth x1"""*/
     fun makeGuess(view: View, guess: String) {
         // TODO: Dialog showing statistics if won/not
         // If user guessed correctly, show the win dialog with statistics
-        if (stringSimilarity(guess, currentSongTitle) > 0.9)
-            wordViewText.text = "Success!"
+        if (stringSimilarity(guess, currentSongTitle) > 0.9) {
+            val gameScore = score((currentTime/1000).toInt(),
+                    wordsFound.numberOfWordsFound,
+                    wordsFound.numberOfWordsInGame,
+                    difficulty,
+                    numberOfGuesses)
+            wordViewText.text = gameScore.toString()
+        }
         // If user guessed incorrectly, show the information
-        else
+        else {
+            numberOfGuesses += 1
             wordViewText.text = "No"
+        }
     }
 
     // Change the WordView layout
     fun changeWordView(view: View) {
-        if (viewType == ViewType.List)
-            viewType = ViewType.Count
+        viewType = if (viewType == ViewType.List)
+            ViewType.Count
         else
-            viewType = ViewType.List
+            ViewType.List
 
         wordViewText.text = wordsFound.getWords(viewType)
     }
@@ -768,8 +789,36 @@ truth x1"""*/
         wordViewText.text = wordsFound.getWords(viewType)
     }
 
+    //region Timer
+    var handler = Handler()
+    var startTime: Long = 0L
+    var currentTime: Long = 0L
+    private var runnable = object : Runnable {
+        override fun run() {
+            currentTime = SystemClock.uptimeMillis() - startTime
+            val seconds = (currentTime/1000).toInt()
+            val minutes = seconds/60
+            val hours = seconds/3600
+
+            // Show time either with or without hours
+            if (hours > 0)
+                timer.text = getString(R.string.hourTime,
+                        hours.toString(),
+                        String.format("%02d", minutes%60),
+                        String.format("%02d", seconds%60))
+            else
+                timer.text = getString(R.string.minuteTime,
+                        String.format("%02d", minutes%60),
+                        String.format("%02d", seconds%60))
+
+            // Call this again after a second
+            handler.postDelayed(this, 1000)
+        }
+    }
+    //endregion
+
     //region Scoring
-    fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: String, guesses: Int): Int {
+    private fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: Difficulty, guesses: Int): Int {
         // Apply scoring functions to arguments
         // T(time)
         val T = when {
@@ -788,12 +837,11 @@ truth x1"""*/
         }
         // D(difficulty)
         val D = when (difficulty){
-            "cakewalk" -> 400
-            "easy"     -> 500
-            "medium"   -> 700
-            "hard"     -> 900
-            "veryhard" -> 1000
-            else       -> 0
+            Difficulty.Cakewalk -> 400
+            Difficulty.Easy     -> 500
+            Difficulty.Medium   -> 700
+            Difficulty.Hard     -> 900
+            Difficulty.VeryHard -> 1000
         }
         // G(guesses, difficulty)
         // Any guess after the 1000th is counted the same as 1000th
@@ -812,11 +860,11 @@ truth x1"""*/
         val p2 = HashSet<String>()
 
         for (i: Int in 0..s1.length-2) {
-            p1.add(s1.substring(i, i+2))
+            p1.add(s1.substring(i, i+2).toLowerCase())
         }
 
         for (i: Int in 0..s2.length-2) {
-            p2.add(s2.substring(i, i+2))
+            p2.add(s2.substring(i, i+2).toLowerCase())
         }
 
         return 2.0*(p1.intersect(p2).size) / (p1.size + p2.size)

@@ -237,10 +237,11 @@
 
     <!--region Time-->
     <TextView
+        android:id="@+id/timer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
-        android:text="10:56"
+        android:text="@string/timer"
         android:textColor="@color/colorPrimaryText"
         android:layout_margin="10dp"/>
     <!--endregion-->
