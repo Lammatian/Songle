@@ -22,7 +22,6 @@
         android:layout_centerVertical="true"
         android:layout_margin="10dp"
         android:src="@drawable/ic_guess_48px"
-        android:onClick="makeGuess"
         android:background="@drawable/circle"/>
 
 </RelativeLayout>

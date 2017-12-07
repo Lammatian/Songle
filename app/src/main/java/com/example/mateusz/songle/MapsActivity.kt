@@ -21,6 +21,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.location.Location
 import android.location.LocationManager
+import android.media.Image
 import android.net.ConnectivityManager
 import android.os.CountDownTimer
 import android.os.Handler
@@ -82,7 +83,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var guessPenalty: List<Double>
     private lateinit var wordsFound: WordsFound
     private lateinit var wordsInGame: HashMap<ArrayList<Int>, Word>
-    private lateinit var currentSongTitle: String
+    private lateinit var currentSong: Song
     private lateinit var difficulty: Difficulty
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
@@ -109,7 +110,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     )
     private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
     private var viewType: ViewType = ViewType.List
-    private var numberOfGuesses: Int = 0
+    private var numberOfWrongGuesses: Int = 0
     // TODO: Read from storage
     private lateinit var songs: List<Song>
 
@@ -176,53 +177,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         var read = inputStream.readText()
         read = read.substring(1, read.length-1)
         guessPenalty = read.split(",").map{it.toDouble()}
-        wordViewText.text = score(0, 1, 10, Difficulty.Cakewalk, 5).toString()
 
         val parsedSongs = DownloadSongsTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
         songs = parsedSongs.get() as List<Song>
-        // TODO: All below should be done after the difficulty is chosen
-        // Try downloading xml
-        //val parsedMap = DownloadMapTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/map4.kml")
-        //val parsedLyrics = DownloadLyricsTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/01/lyrics.txt")
-
-        // Works!
-        //lyrics = parsedLyrics.get() as List<List<String>>
-        //points = parsedMap.get() as List<MapPoint>
-        /*val lyricsText = """Just one more time before I go
-I'll let you know
-That all this time I've been afraid
-I wouldn't let it show
-Nobody can save me now
-No
-Nobody can save me now
-
-Stars are only visible in darkness
-Fear is ever-changing and evolving
-And I
-I feel poison inside
-And I
-I feel so alive
-
-Nobody can save me now
-The king is crowned
-It's do or die
-Nobody can save me now
-The only sound
-Is the battle cry"""
-
-        lyrics = lyricsText.split("\n").map{it.split(" ")}
-        points = ArrayList<MapPoint>(0)
-        wordsFound = WordsFound(ArrayList(0), hashMapOf())
-        currentSongTitle = "Bohemian Rhapsody"
-
-        wordViewText.text = """Scaramouche x2
-come x1
-Figaro x1
-Galileo x1
-Gotta x1
-late x1
-Thunderbolt x1
-truth x1"""*/
     }
     //endregion
 
@@ -247,9 +204,11 @@ truth x1"""*/
             println("Style not found exception thrown [onMapReady]")
         }
 
-        // Add a marker in ~Edinburgh and move the camera
+        // Move camera to player location
+        // TODO: Get location and zoom to the location (OnLocationChanged method)
+        val zoom = 16f
         val edi = LatLng(55.946, -3.1888)
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(edi))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(edi, zoom))
 
         // Current position on the map
         try {
@@ -265,6 +224,7 @@ truth x1"""*/
         //mMap.isMyLocationEnabled = true
 
         // TODO: First if statement doesn't work
+        //region Location services
         // Ask for location services if needed
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -290,7 +250,9 @@ truth x1"""*/
                     Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
                     99)
         }
+        //endregion
 
+        //region Marker click handling
         // Set listener for click on the button
         mMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
             override fun onMarkerClick(marker: Marker): Boolean {
@@ -382,8 +344,9 @@ truth x1"""*/
                 return true
             }
         })
+        //endregion
 
-        // Choose difficulty
+        //region Choose difficulty
         // TODO: Move to separate method
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
@@ -414,6 +377,7 @@ truth x1"""*/
 
         // Show the dialog
         dialog.show()
+        //endregion
     }
 
     /**
@@ -448,8 +412,8 @@ truth x1"""*/
 
     //region Game logic
     private fun startGame() {
-        // Set number of guesses to 0
-        numberOfGuesses = 0
+        // Set number of wrong guesses to 0
+        numberOfWrongGuesses = 0
 
         // Get last two songs
         // TODO: Get proper last two songs
@@ -462,8 +426,8 @@ truth x1"""*/
         while (choice in lastTwo)
             choice = Math.floor(Math.random()*24 + 1).toInt()
 
-        // Get song title
-        currentSongTitle = songs[choice-1].title
+        // Get song to guess
+        currentSong = songs[choice-1]
 
         // Get map points for the song
         val songsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/map" + difficultyToNumber[difficulty] + ".kml"
@@ -675,8 +639,12 @@ truth x1"""*/
 
         val makeGuessButton = mView.findViewById<ImageButton>(R.id.makeGuess)
         val guessText = mView.findViewById<EditText>(R.id.guessText)
+        // TODO: This is hacky, I don't really like it
         makeGuessButton.setOnClickListener({
-            view -> makeGuess(view, guessText.text.toString())
+            v ->
+            if (makeGuess(v, guessText.text.toString())) {
+                dialog.dismiss()
+            }
         })
 
         // Change font for the dialog
@@ -688,6 +656,52 @@ truth x1"""*/
 
     fun showTreasure() {
         showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
+    }
+
+    private fun showWin() {
+        // Set up the dialog
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_win, null)
+
+        mBuilder.setView(mView)
+        val dialog = mBuilder.create()
+
+        // Calculate the score
+        val gameScore = score((currentTime/1000).toInt(),
+                wordsFound.numberOfWordsFound,
+                wordsFound.numberOfWordsInGame,
+                difficulty,
+                numberOfWrongGuesses)
+
+        // Set text of all text views
+        mView.findViewById<TextView>(R.id.totalGuesses).text = (numberOfWrongGuesses + 1).toString()
+        mView.findViewById<TextView>(R.id.totalPoints).text = gameScore.toString()
+        mView.findViewById<TextView>(R.id.totalTime).text = getCurrentGameTime()
+        mView.findViewById<TextView>(R.id.songInformation).text = getString(R.string.songInfo,
+                currentSong.artist,
+                currentSong.title)
+
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWinView))
+
+        // On click listener for all buttons
+        val ocl = View.OnClickListener {
+            dialog.dismiss()
+        }
+
+        // Set the onClick for all buttons
+        val again = mView.findViewById<Button>(R.id.playAgainButton)
+        again.setOnClickListener {
+            startGame()
+            dialog.dismiss()
+        }
+        val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
+        stop.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Show the dialog
+        dialog.show()
     }
 
     private fun showDialog(layout: Int,
@@ -752,26 +766,42 @@ truth x1"""*/
             wordView.visibility = View.INVISIBLE
     }
 
-    // Check if the user guessed correctly
-    fun makeGuess(view: View, guess: String) {
-        // TODO: Dialog showing statistics if won/not
+    /**
+     * Handle correct and incorrect user guess
+     */
+    private fun makeGuess(view: View, guess: String) : Boolean {
         // If user guessed correctly, show the win dialog with statistics
-        if (stringSimilarity(guess, currentSongTitle) > 0.9) {
-            val gameScore = score((currentTime/1000).toInt(),
-                    wordsFound.numberOfWordsFound,
-                    wordsFound.numberOfWordsInGame,
-                    difficulty,
-                    numberOfGuesses)
-            wordViewText.text = gameScore.toString()
+        if (stringSimilarity(guess, currentSong.title) > 0.9) {
+            for ((marker, _) in markerToPoint) {
+                marker.remove()
+            }
+            showWords(view)
+            showWin()
+            return true
         }
-        // If user guessed incorrectly, show the information
+        // If user guessed incorrectly, change button to red for 2 seconds
+        // TODO: Shake the button a bit as well
         else {
-            numberOfGuesses += 1
-            wordViewText.text = "No"
+            val button = view.findViewById<ImageButton>(R.id.makeGuess)
+            button.background = resources.getDrawable(R.drawable.no_circle)
+            object: CountDownTimer(2000, 2000) {
+                override fun onTick(p0: Long) {
+                }
+
+                override fun onFinish() {
+                    button.background = resources.getDrawable(R.drawable.choice_circle)
+                }
+            }.start()
+            // User guessed incorrectly
+            numberOfWrongGuesses += 1
+            return false
         }
     }
 
-    // Change the WordView layout
+    /**
+     * Change the word view layout between list and count
+     */
+    // TODO: Crashes on the phone, add onClick to switch view programatically
     fun changeWordView(view: View) {
         viewType = if (viewType == ViewType.List)
             ViewType.Count
@@ -781,7 +811,9 @@ truth x1"""*/
         wordViewText.text = wordsFound.getWords(viewType)
     }
 
-    // Put new word into the collection of found words
+    /**
+     * Put new word into the collection of found words
+     */
     fun updateWithNewWord(place: ArrayList<Int>) {
         // Update word found database
         wordsFound.addWord(place)
@@ -796,26 +828,34 @@ truth x1"""*/
     private var runnable = object : Runnable {
         override fun run() {
             currentTime = SystemClock.uptimeMillis() - startTime
-            val seconds = (currentTime/1000).toInt()
-            val minutes = seconds/60
-            val hours = seconds/3600
 
-            // Show time either with or without hours
-            if (hours > 0)
-                timer.text = getString(R.string.hourTime,
-                        hours.toString(),
-                        String.format("%02d", minutes%60),
-                        String.format("%02d", seconds%60))
-            else
-                timer.text = getString(R.string.minuteTime,
-                        String.format("%02d", minutes%60),
-                        String.format("%02d", seconds%60))
+            timer.text = getCurrentGameTime()
 
             // Call this again after a second
             handler.postDelayed(this, 1000)
         }
     }
     //endregion
+
+    /**
+     * Returns properly formatted current game time
+     */
+    private fun getCurrentGameTime() : String {
+        val seconds = (currentTime/1000).toInt()
+        val minutes = seconds/60
+        val hours = seconds/3600
+
+        // Get time either with or without hours
+        return if (hours > 0)
+            getString(R.string.hourTime,
+                    hours.toString(),
+                    String.format("%02d", minutes%60),
+                    String.format("%02d", seconds%60))
+        else
+            getString(R.string.minuteTime,
+                    String.format("%02d", minutes%60),
+                    String.format("%02d", seconds%60))
+    }
 
     //region Scoring
     private fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: Difficulty, guesses: Int): Int {

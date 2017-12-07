@@ -33,4 +33,13 @@
     <string name="timer">mm:ss</string>
     <string name="minuteTime">%1$s:%2$s</string>
     <string name="hourTime">%1$s:%2$s:%3$s</string>
+    <string name="win">You win!</string>
+    <string name="songInfo">%1$s - %2$s</string>
+    <string name="playAgain">Play again</string>
+    <string name="zero">0</string>
+    <string name="zeroTime">00:00</string>
+    <string name="winTimeText">Time</string>
+    <string name="winPointsText">Points</string>
+    <string name="winGuessesText">Guesses</string>
+    <string name="stopPlaying">That\'s enough</string>
 </resources>
