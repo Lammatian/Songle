@@ -1,23 +1,23 @@
 package com.example.mateusz.songle
 
 import android.os.AsyncTask
+import com.example.mateusz.songle.songdb.Song
 import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
 
-/**
- * Created by mateusz on 03/12/17.
- */
-class DownloadSongsTask(private val caller: DownloadCompleteListener,
-                        private val summaryPref: Boolean) :
-        AsyncTask<String, Void, List<Song>?>() {
+class DownloadNewSongsTask(private val caller: DownloadCompleteListener,
+                        private val url: String,
+                        private val timestamp: Date,
+                        private val numberOfSongs: Int) :
+        AsyncTask<Void, Void, List<Song>?>() {
 
-    override fun doInBackground(vararg urls: String): List<Song>? {
+    override fun doInBackground(vararg urls: Void): List<Song>? {
         return try {
-            // TODO: Timestamp
-            loadSongsFromNetwork(urls[0], "")
+            loadSongsFromNetwork(url, timestamp, numberOfSongs)
         }
         catch (e: IOException) {
             null
@@ -27,19 +27,18 @@ class DownloadSongsTask(private val caller: DownloadCompleteListener,
         }
     }
 
-    private fun loadSongsFromNetwork(urlString: String, timestamp: String): List<Song>? {
-        //var result = StringBuilder()
-        val stream = downloadUrl(urlString)
-
-        // parse XML
+    private fun loadSongsFromNetwork(urlString: String, timestamp: Date, numberOfSongs: Int): List<Song>? {
+        // Get the stream from url
+        var stream = downloadUrl(urlString)
         val parser = SongsParser()
 
         // Check if songs are up to date and return empty list if so
-        // TODO: Timestamp
-        //if (parser.isUpToDate(stream, timestamp))
-        //    return emptyList()
+        if (parser.isUpToDate(stream, timestamp))
+            return emptyList()
 
-        return parser.parse(stream)
+        stream = downloadUrl(urlString)
+        // If not up to date, download new songs
+        return parser.parse(stream, numberOfSongs)
     }
 
     // TODO: Move somewhere more general for less code repetition
@@ -58,6 +57,7 @@ class DownloadSongsTask(private val caller: DownloadCompleteListener,
         return conn.inputStream
     }
 
+    // TODO: Is that at all necessary? Use dcl better
     override fun onPostExecute(result: List<Song>?) {
         super.onPostExecute(result)
         caller.onDownloadComplete(result.toString())

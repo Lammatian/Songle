@@ -14,11 +14,10 @@ interface DownloadCompleteListener{
     fun onDownloadComplete(result: String)
 }
 
-class DownloadLyricsTask(private val caller: DownloadCompleteListener,
-                         private val summaryPref: Boolean) :
-        AsyncTask<String, Void, List<List<String>>?>() {
+class DownloadLyricsTask(private val caller: DownloadCompleteListener) :
+        AsyncTask<String, Void, String?>() {
 
-    override fun doInBackground(vararg urls: String): List<List<String>>? {
+    override fun doInBackground(vararg urls: String): String? {
         return try {
             loadLyricsFromNetwork(urls[0])
         }
@@ -30,15 +29,16 @@ class DownloadLyricsTask(private val caller: DownloadCompleteListener,
         }
     }
 
-    private fun loadLyricsFromNetwork(urlString: String): List<List<String>> {
+    private fun loadLyricsFromNetwork(urlString: String): String {
         // TODO: Punctuation parsing?
         val stream = downloadUrl(urlString)
 
         // get lyrics of the song
         val lyrics = stream.bufferedReader().use{it.readText()}
 
+        return lyrics
         // return lyrics split by lines and by spaces
-        return lyrics.split("\n").map{it.split(" ")}
+//        return lyrics.split("\n").map{it.split(" ")}
     }
 
     // TODO: Move to more general place for no code repetition
@@ -57,7 +57,7 @@ class DownloadLyricsTask(private val caller: DownloadCompleteListener,
         return conn.inputStream
     }
 
-    override fun onPostExecute(result: List<List<String>>?) {
+    override fun onPostExecute(result: String?) {
         super.onPostExecute(result)
         caller.onDownloadComplete(result.toString())
     }

@@ -10,8 +10,7 @@ import java.net.URL
 /**
  * Created by mateusz on 03/12/17.
  */
-class DownloadMapTask(private val caller: DownloadCompleteListener,
-                      private val summaryPref: Boolean) :
+class DownloadMapTask(private val caller: DownloadCompleteListener) :
         AsyncTask<String, Void, List<MapPoint>?>() {
 
     override fun doInBackground(vararg urls: String): List<MapPoint>? {

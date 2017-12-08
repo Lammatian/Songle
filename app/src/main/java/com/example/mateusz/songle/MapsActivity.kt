@@ -4,11 +4,10 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.app.ActionBar
+import android.arch.persistence.room.Room
+import android.arch.persistence.room.RoomDatabase
 import android.content.*
 import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
-import com.google.android.gms.location.LocationServices
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -18,14 +17,9 @@ import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.location.Location
-import android.location.LocationManager
-import android.media.Image
 import android.net.ConnectivityManager
-import android.os.CountDownTimer
-import android.os.Handler
-import android.os.SystemClock
+import android.os.*
 import android.preference.PreferenceManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
@@ -37,22 +31,20 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
-import com.google.android.gms.location.FusedLocationProviderApi
-import com.google.android.gms.location.FusedLocationProviderClient
+import com.example.mateusz.songle.songdb.Lyrics
+import com.example.mateusz.songle.songdb.Song
+import com.example.mateusz.songle.songdb.SongDatabase
+import com.example.mateusz.songle.songdb.SongMap
 import com.google.android.gms.maps.model.*
-import com.google.android.gms.tasks.OnSuccessListener
 import kotlinx.android.synthetic.main.activity_maps.*
-import kotlinx.android.synthetic.main.dialog_statistics.*
-import kotlinx.android.synthetic.main.dialog_statistics.view.*
 import java.io.BufferedReader
-import java.io.File
 import java.io.InputStreamReader
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
- * Created by mateusz on 03/11/17.
  * ic_treasure taken from https://openclipart.org/detail/257257/chromatic-musical-notes-typography-no-background
  * ic_idea taken from https://thenounproject.com/term/idea/62335/, work of Takao Umehara
  */
@@ -85,15 +77,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var wordsInGame: HashMap<ArrayList<Int>, Word>
     private lateinit var currentSong: Song
     private lateinit var difficulty: Difficulty
+    private lateinit var songDB: SongDatabase
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
-    private var lifelongStatistics: HashMap<String, String> = hashMapOf(
-            "Best score" to "0",
-            "Games played" to "0",
-            "Games won" to "0",
-            "Total time in game" to "0:00:00",
-            "Average score" to "0",
-            "Last game score" to "0"
+    private lateinit var timestamp: Date
+    private var numberOfSongs: Int = 0
+    private var lifelongStatistics: HashMap<String, Long> = hashMapOf(
+            "Best score" to 0L,
+            "Games played" to 0L,
+            "Games won" to 0L,
+            "Total time in game" to 0L,
+            "Average score" to 0L,
+            "Last game score" to 0L
     )
     private val desToIcon: HashMap<String, Int> = hashMapOf(
             "unclassified" to R.mipmap.wht_blank,
@@ -101,17 +96,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             "notboring" to R.mipmap.ylw_circle,
             "interesting" to R.mipmap.orange_diamond,
             "veryinteresting" to R.mipmap.red_stars)
-    private val difficultyToNumber: HashMap<Difficulty, Int> = hashMapOf(
-            Difficulty.Cakewalk to 5,
-            Difficulty.Easy to 4,
-            Difficulty.Medium to 3,
-            Difficulty.Hard to 2,
-            Difficulty.VeryHard to 1
+    private val numberToDifficulty: HashMap<Int, Difficulty> = hashMapOf(
+            5 to Difficulty.Cakewalk,
+            4 to Difficulty.Easy,
+            3 to Difficulty.Medium,
+            2 to Difficulty.Hard,
+            1 to Difficulty.VeryHard
     )
     private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
+//    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH)
+    private val dateFormat: SimpleDateFormat = SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH)
     private var viewType: ViewType = ViewType.List
     private var numberOfWrongGuesses: Int = 0
     // TODO: Read from storage
+    private lateinit var newSongs: List<Song>
     private lateinit var songs: List<Song>
 
     // TODO: Implement
@@ -159,27 +157,65 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
 
-        // Shared preferences test
-        // TODO: Improve
+        // Shared preferences retrieval
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-        val editor = sharedPreferences.edit()
-        editor.putString("Best score", "2000")
-        editor.apply()
 
         // Statistics initialization
         for (stat in lifelongStatistics.keys) {
-            if (sharedPreferences.getString(stat, "") != "")
-                lifelongStatistics[stat] = sharedPreferences.getString(stat, "")
+            if (sharedPreferences.getLong(stat, -1L) != -1L)
+                lifelongStatistics[stat] = sharedPreferences.getLong(stat, 0L)
         }
+
+        // Get the timestamp of the last known song file and the number of songs in it
+        timestamp = dateFormat.parse(sharedPreferences.getString("timestamp", "2017-12-08T12:50:20.327Z[Europe/London]"))
 
         // Guess penalty reading and scoring test
         val inputStream = BufferedReader(InputStreamReader(assets.open("helpers/guesspen.txt")))
-        var read = inputStream.readText()
-        read = read.substring(1, read.length-1)
-        guessPenalty = read.split(",").map{it.toDouble()}
+        var readGuessPen = inputStream.readText()
+        readGuessPen = readGuessPen.substring(1, readGuessPen.length-1)
+        guessPenalty = readGuessPen.split(",").map{it.toDouble()}
 
-        val parsedSongs = DownloadSongsTask(Dcl(), false).execute("http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml")
-        songs = parsedSongs.get() as List<Song>
+        // TODO: Move to separate class
+        // TODO: When loading, show some information
+        songDB = Room.databaseBuilder(applicationContext, SongDatabase::class.java, "Songs")
+                .allowMainThreadQueries().fallbackToDestructiveMigration().build()
+
+        // Check for new songs
+        val url = baseUrl + "/songs/songs.xml"
+        val parsedSongs = DownloadNewSongsTask(Dcl(), url, timestamp, numberOfSongs).execute()
+        newSongs = parsedSongs.get() as List<Song>
+
+        // Add new songs, lyrics and map points to the database
+        for (i in 0 until newSongs.size) {
+            songDB.songDao().insertSong(newSongs[i])
+
+            val newSongNum = numberOfSongs + 1 + i
+
+            // Download lyrics to new songs
+            val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/lyrics.txt"
+            val parsedLyrics = DownloadLyricsTask(Dcl()).execute(lyricsUrl)
+            val lyrics = parsedLyrics.get()!!
+            songDB.songDao().insertLyrics(Lyrics(newSongNum, lyrics))
+
+            // Download all maps to new songs
+            for (j in 1..5) {
+                val mapUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/map" + j.toString() + ".kml"
+                val parsedMap = DownloadMapTask(Dcl()).execute(mapUrl)
+                val map = parsedMap.get()!!
+                songDB.songDao().insertMap(SongMap(newSongNum, numberToDifficulty[j]!!, map))
+            }
+        }
+
+        // Finally, get all songs from the database
+        songs = songDB.songDao().getAllSongs()
+
+        // Update timestamp
+        val editor = sharedPreferences.edit()
+        editor.putString("timestamp", timestamp.toString())
+        editor.apply()
+
+        // Update number of songs
+        numberOfSongs = songs.size
     }
     //endregion
 
@@ -420,28 +456,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val lastTwo = arrayOf(1, 2)
 
         // Pick a different song from the above for the game
-        // TODO: Get proper amount of songs
-        var choice = Math.floor(Math.random()*24 + 1).toInt()
+        var choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
 
         while (choice in lastTwo)
-            choice = Math.floor(Math.random()*24 + 1).toInt()
+            choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
 
         // Get song to guess
         currentSong = songs[choice-1]
 
         // Get map points for the song
-        val songsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/map" + difficultyToNumber[difficulty] + ".kml"
-        val parsedMap = DownloadMapTask(Dcl(), false).execute(songsUrl)
-        if (parsedMap.get() != null)
-            points = parsedMap.get()!!
-        // TODO: Else dialog with error
+        points = songDB.songDao().getMap(choice, difficulty).points
 
         // Get lyrics for the song
-        val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", choice) + "/lyrics.txt"
-        val parsedLyrics = DownloadLyricsTask(Dcl(), false).execute(lyricsUrl)
-        if (parsedLyrics.get() != null)
-            lyrics = parsedLyrics.get()!!
-        // TODO: Else dialog with error
+        lyrics = songDB.songDao().getLyricsByNumber(choice).lyrics.split("\n").map{it.split(" ")}
 
         // Initialize wordsInGame
         wordsInGame = hashMapOf()
@@ -459,6 +486,46 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Start the clock
         startTime = SystemClock.uptimeMillis()
         handler.post(runnable)
+    }
+
+    /**
+     * Logic after winning a game
+     */
+    private fun endGame() {
+        // Calculate the score
+        val gameScore = score((currentTime/1000).toInt(),
+                wordsFound.numberOfWordsFound,
+                wordsFound.numberOfWordsInGame,
+                difficulty,
+                numberOfWrongGuesses)
+
+        // Update best score if necessary
+        lifelongStatistics["Best score"] = Math.max(gameScore.toLong(), lifelongStatistics["Best score"]!!)
+
+        // Add one game to both won and played games
+        lifelongStatistics["Games won"] = lifelongStatistics["Games won"]!! + 1
+        lifelongStatistics["Games played"] = lifelongStatistics["Games played"]!! + 1
+
+        // Add time spent in this game to the statistics
+        lifelongStatistics["Total time in game"] = lifelongStatistics["Total time in game"]!! + currentTime
+
+        // Update average score
+        val totalScoreBefore = (lifelongStatistics["Games played"]!! - 1) * lifelongStatistics["Average score"]!!
+        val newAverage = (totalScoreBefore + gameScore.toLong()) / lifelongStatistics["Games played"]!!
+        lifelongStatistics["Average score"] = newAverage
+
+        // Update last game score
+        lifelongStatistics["Last game score"] = gameScore.toLong()
+
+        // Update shared preferences
+        val editor = sharedPreferences.edit()
+        for ((statistic, value) in lifelongStatistics) {
+            editor.putLong(statistic, value)
+        }
+        editor.apply()
+
+        // Show win dialog
+        showWin(gameScore)
     }
     //endregion
 
@@ -587,12 +654,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //region Dialogs
     fun showStats(view: View) {
         val text = hashMapOf(
-                R.id.statBestScore to lifelongStatistics["Best score"]!!,
-                R.id.statGamesPlayed to lifelongStatistics["Games played"]!!,
-                R.id.statGamesWon to lifelongStatistics["Games won"]!!,
-                R.id.statTimeInGame to lifelongStatistics["Total time in game"]!!,
-                R.id.statAverageScore to lifelongStatistics["Average score"]!!,
-                R.id.statLastGameScore to lifelongStatistics["Last game score"]!!
+                R.id.statBestScore to lifelongStatistics["Best score"]!!.toString(),
+                R.id.statGamesPlayed to lifelongStatistics["Games played"]!!.toString(),
+                R.id.statGamesWon to lifelongStatistics["Games won"]!!.toString(),
+                R.id.statTimeInGame to getFormattedTime(lifelongStatistics["Total time in game"]!!),
+                R.id.statAverageScore to lifelongStatistics["Average score"]!!.toString(),
+                R.id.statLastGameScore to lifelongStatistics["Last game score"]!!.toString()
         )
 
         showDialog(R.layout.dialog_statistics, R.id.mainStatView, texts = text)
@@ -658,7 +725,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
     }
 
-    private fun showWin() {
+    private fun showWin(gameScore: Int) {
         // Set up the dialog
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(R.layout.dialog_win, null)
@@ -666,17 +733,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mBuilder.setView(mView)
         val dialog = mBuilder.create()
 
-        // Calculate the score
-        val gameScore = score((currentTime/1000).toInt(),
-                wordsFound.numberOfWordsFound,
-                wordsFound.numberOfWordsInGame,
-                difficulty,
-                numberOfWrongGuesses)
-
         // Set text of all text views
         mView.findViewById<TextView>(R.id.totalGuesses).text = (numberOfWrongGuesses + 1).toString()
         mView.findViewById<TextView>(R.id.totalPoints).text = gameScore.toString()
-        mView.findViewById<TextView>(R.id.totalTime).text = getCurrentGameTime()
+        mView.findViewById<TextView>(R.id.totalTime).text = getFormattedTime(currentTime)
         mView.findViewById<TextView>(R.id.songInformation).text = getString(R.string.songInfo,
                 currentSong.artist,
                 currentSong.title)
@@ -689,14 +749,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             dialog.dismiss()
         }
 
-        // Set the onClick for all buttons
+        // Set the onClick for playAgain and stopPlaying
         val again = mView.findViewById<Button>(R.id.playAgainButton)
         again.setOnClickListener {
             startGame()
             dialog.dismiss()
         }
+        // If stop playing, set timer to 0 and close the window
+        // TODO: Enable playing again?
         val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
         stop.setOnClickListener {
+            startTime = SystemClock.uptimeMillis()
+            currentTime = 0L
+            timer.text = getFormattedTime(currentTime)
+            handler.removeCallbacks(runnable)
             dialog.dismiss()
         }
 
@@ -775,8 +841,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             for ((marker, _) in markerToPoint) {
                 marker.remove()
             }
+            // Hide word view
             showWords(view)
-            showWin()
+            // Handle win
+            endGame()
             return true
         }
         // If user guessed incorrectly, change button to red for 2 seconds
@@ -829,7 +897,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         override fun run() {
             currentTime = SystemClock.uptimeMillis() - startTime
 
-            timer.text = getCurrentGameTime()
+            timer.text = getFormattedTime(currentTime)
 
             // Call this again after a second
             handler.postDelayed(this, 1000)
@@ -840,8 +908,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     /**
      * Returns properly formatted current game time
      */
-    private fun getCurrentGameTime() : String {
-        val seconds = (currentTime/1000).toInt()
+    private fun getFormattedTime(time: Long) : String {
+        val seconds = (time/1000).toInt()
         val minutes = seconds/60
         val hours = seconds/3600
 
