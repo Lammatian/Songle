@@ -16,7 +16,7 @@ data class Song(@PrimaryKey(autoGenerate = false) var number: Int,
 data class Lyrics(@PrimaryKey(autoGenerate = false) var number: Int,
                   @ColumnInfo(name = "Lyrics") var lyrics: String)
 
-@Entity(tableName = "Maps", primaryKeys = arrayOf("Number", "Difficulty"))
+@Entity(tableName = "Maps", primaryKeys = ["Number", "Difficulty"])
 data class SongMap(@ColumnInfo(name = "Number") var number: Int,
                    @ColumnInfo(name = "Difficulty") var difficulty: Difficulty,
                    @ColumnInfo(name = "Points") var points: List<MapPoint>)

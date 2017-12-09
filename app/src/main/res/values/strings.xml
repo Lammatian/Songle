@@ -15,7 +15,7 @@
     <string name="newWord">You found a new word!</string>
     <string name="placeTemplate">[, ]</string>
     <string name="wordTemplate">word</string>
-    <string name="giveUp">Are you giving up?</string>
+    <string name="giveUp">Too hard?</string>
     <string name="welcome">Welcome to Songle!</string>
     <string name="gl">Good luck!</string>
     <string name="bestScore">Best score</string>
@@ -34,6 +34,7 @@
     <string name="minuteTime">%1$s:%2$s</string>
     <string name="hourTime">%1$s:%2$s:%3$s</string>
     <string name="win">You win!</string>
+    <string name="lose">You lose</string>
     <string name="songInfo">%1$s - %2$s</string>
     <string name="playAgain">Play again</string>
     <string name="zero">0</string>
@@ -42,4 +43,7 @@
     <string name="winPointsText">Points</string>
     <string name="winGuessesText">Guesses</string>
     <string name="stopPlaying">That\'s enough</string>
+    <string name="changeDiff">Make it easier</string>
+    <string name="givingUp">Way too hard</string>
+    <string name="idea">Guess</string>
 </resources>

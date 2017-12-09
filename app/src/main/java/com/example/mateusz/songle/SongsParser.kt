@@ -9,11 +9,6 @@ import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Created by mateusz on 03/12/17.
- */
-//data class Song(val number: Int, val artist: String, val title: String, val link: String)
-
 class SongsParser {
     // namespace
     private val ns: String? = null

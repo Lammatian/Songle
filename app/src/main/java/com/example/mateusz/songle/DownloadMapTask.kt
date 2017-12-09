@@ -7,9 +7,6 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Created by mateusz on 03/12/17.
- */
 class DownloadMapTask(private val caller: DownloadCompleteListener) :
         AsyncTask<String, Void, List<MapPoint>?>() {
 

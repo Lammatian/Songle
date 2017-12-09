@@ -36,7 +36,6 @@ class WordsFound(lyrics: List<List<String>>,
 
     // Constructor
     init {
-        // TODO: Bug with wordsList size?
         wordsList = ArrayList(lyrics.size)
         for (i in 0 until lyrics.size) {
             wordsList.add(ArrayList(lyrics[i].size))
@@ -45,7 +44,9 @@ class WordsFound(lyrics: List<List<String>>,
         }
     }
 
-    // Add a word both to the list and the count
+    /**
+     * Add a word both to the list and the count
+     */
     fun addWord(place: ArrayList<Int>) {
         val newWord = wordsInGame[place]
 
@@ -60,15 +61,18 @@ class WordsFound(lyrics: List<List<String>>,
         numberOfWordsFound += 1
     }
 
-    // Add whole line
+    /**
+     * Add a whole line
+     */
     fun addLine(line: ArrayList<String>, number: Int) {
         // TODO: Implement
     }
 
-    // Get the string representing given type of words
+    /**
+     * Get the string representing given type of words
+     */
     // TODO: Sort wordsCount by interest
     // TODO: Better error handling
-    // TODO: In list show only lines with words?
     fun getWords(type: ViewType): Spanned {
         // As list
         if (type == ViewType.List) {

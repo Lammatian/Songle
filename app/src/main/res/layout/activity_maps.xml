@@ -53,7 +53,6 @@
                 android:layout_height="wrap_content"
                 android:showText="true"
                 android:layout_centerVertical="true"
-                android:onClick="changeWordView"
                 android:layout_toEndOf="@id/listType"
                 android:theme="@style/ViewTypeSwitchStyle" />
 
@@ -62,6 +61,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_idea"
+                android:contentDescription="@string/idea"
                 android:clickable="true"
                 android:focusable="true"
                 android:onClick="showGuessWindow"

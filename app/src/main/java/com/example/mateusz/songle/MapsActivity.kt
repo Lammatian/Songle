@@ -5,7 +5,6 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.arch.persistence.room.Room
-import android.arch.persistence.room.RoomDatabase
 import android.content.*
 import android.support.v7.app.AppCompatActivity
 
@@ -50,10 +49,10 @@ import kotlin.collections.HashMap
  */
 
 // Map boundaries
-private const val minLat = 55.942617
-private const val maxLat = 55.946233
-private const val minLng = -3.192473
-private const val maxLng = -3.184319
+private const val MIN_LAT = 55.942617
+private const val MAX_LAT = 55.946233
+private const val MIN_LNG = -3.192473
+private const val MAX_LNG = -3.184319
 
 // Difficulties
 enum class Difficulty {
@@ -108,7 +107,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH)
     private var viewType: ViewType = ViewType.List
     private var numberOfWrongGuesses: Int = 0
-    // TODO: Read from storage
     private lateinit var newSongs: List<Song>
     private lateinit var songs: List<Song>
 
@@ -157,6 +155,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
 
+        // Toggle switch onClick
+        wordViewType.setOnClickListener {
+            _ -> changeWordView()
+        }
+
         // Shared preferences retrieval
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
 
@@ -175,7 +178,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         readGuessPen = readGuessPen.substring(1, readGuessPen.length-1)
         guessPenalty = readGuessPen.split(",").map{it.toDouble()}
 
-        // TODO: Move to separate class
+        // Connect to database and get information about songs
         // TODO: When loading, show some information
         songDB = Room.databaseBuilder(applicationContext, SongDatabase::class.java, "Songs")
                 .allowMainThreadQueries().fallbackToDestructiveMigration().build()
@@ -292,73 +295,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Set listener for click on the button
         mMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
             override fun onMarkerClick(marker: Marker): Boolean {
-                // TODO: Why is checking location permissions here?
-                if (ContextCompat.checkSelfPermission(this@MapsActivity,
-                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    // Get location of player and marker
-                    // TODO: Get proper location of the player
-                    val myLoc = Location("")
-                    myLoc.latitude = edi.latitude
-                    myLoc.longitude = edi.longitude
-                    val markerLoc = Location("")
-                    markerLoc.latitude = marker.position.latitude
-                    markerLoc.longitude = marker.position.longitude
+                // Get location of player and marker
+                // TODO: Get proper location of the player
+                val myLoc = Location("")
+                myLoc.latitude = edi.latitude
+                myLoc.longitude = edi.longitude
+                val markerLoc = Location("")
+                markerLoc.latitude = marker.position.latitude
+                markerLoc.longitude = marker.position.longitude
 
-                    // Check if player can pick up the word from current distance
-                    if (myLoc.distanceTo(markerLoc) > 1000)
-                        return true
+                // Check if player can pick up the word from current distance
+                if (myLoc.distanceTo(markerLoc) > 1000)
+                    return true
 
-                    // Sort out treasure separately
-                    if (marker == treasure) {
-                        showTreasure()
-                        // TODO: Proper implementation
-                        wordsFound.addLine(ArrayList(0), 0)
-                        return true
-                    }
+                // Sort out treasure separately
+                if (marker == treasure) {
+                    showTreasure()
+                    // TODO: Proper implementation
+                    wordsFound.addLine(ArrayList(0), 0)
+                    return true
+                }
 
-                    // Word found popup dialog with custom style
-                    // TODO: Dialog of appropriate width
-                    val point = markerToPoint[marker]
-                    val text = hashMapOf(
-                            R.id.place to "[" + point!!.name.joinToString(",") + "]",
-                            R.id.wordFound to lyrics[point.name[0]-1][point.name[1]-1]
-                    )
+                // Word found popup dialog with custom style
+                // TODO: Dialog of appropriate width
+                val point = markerToPoint[marker]
+                val text = hashMapOf(
+                        R.id.place to "[" + point!!.name.joinToString(",") + "]",
+                        R.id.wordFound to lyrics[point.name[0]-1][point.name[1]-1]
+                )
 
-                    showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
-                    // TODO: Implement properly
-                    updateWithNewWord(arrayListOf(point.name[0], point.name[1]))
-                    marker.remove()
+                showDialog(R.layout.dialog_wordfound, R.id.mainWordView, texts = text)
+                updateWithNewWord(arrayListOf(point.name[0], point.name[1]))
+                marker.remove()
 
-                    //region Old wordfound dialog code
-//                    val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
-//                    val mView = layoutInflater.inflate(R.layout.dialog_wordfound, null)
-//
-//                    mBuilder.setView(mView)
-//                    val dialog = mBuilder.create()
-//
-//                    // Set word position in the popup
-//                    val point = markerToPoint[marker]
-//                    mView.findViewById<TextView>(R.id.place).text = "[" + point!!.name.joinToString(",") + "]"
-//                    mView.findViewById<TextView>(R.id.wordFound).text = lyrics[point.name[0]-1][point.name[1]-1]
-//
-//                    marker.remove()
-//                    // Set dialog width and height
-//                    // TODO: Doesn't work properly with width
-//                    // TODO: Additional parameters to showDialog?
-//                    var lp = WindowManager.LayoutParams()
-//                    lp.copyFrom(dialog.window.attributes)
-//                    lp.width = 700
-//                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT
-//
-//                    // Change font for the view
-//                    FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWordView))
-//
-//                    dialog.show()
-//                    // Attributes have to be changed after showing for some reason
-//                    dialog.window.attributes = lp
-                    //endregion
-
-                    // TODO: This should spawn a imagebutton in WordFeed
+                // TODO: This should spawn a imagebutton in WordFeed
 //                    object: CountDownTimer(5000, 5000) {
 //
 //                        override fun onTick(p0: Long) {
@@ -370,10 +340,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 //                        }
 //                    }.start()
 
-                    // TODO: Remove this shit from here to somewhere else
-                    if (myLoc.distanceTo(treasureLoc) < 100) {
-                        treasure.isVisible = true
-                    }
+                // TODO: Remove this shit from here to onLocationChanged
+                if (myLoc.distanceTo(treasureLoc) < 100) {
+                    treasure.isVisible = true
                 }
 
                 // Stop the default reaction to clicking a marker
@@ -383,36 +352,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //endregion
 
         //region Choose difficulty
-        // TODO: Move to separate method
-        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
-        val mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
-
-        mBuilder.setView(mView)
-        val dialog = mBuilder.create()
-
-        // Get all difficulty buttons
-        val cakewalk = mView.findViewById<Button>(R.id.btnCakewalk)
-        val easy = mView.findViewById<Button>(R.id.btnEasy)
-        val medium = mView.findViewById<Button>(R.id.btnMedium)
-        val hard = mView.findViewById<Button>(R.id.btnHard)
-        val vhard = mView.findViewById<Button>(R.id.btnVHard)
-        val diffs = arrayOf(cakewalk, easy, medium, hard, vhard)
-
-        // On click listener for all buttons
-        val ocl = View.OnClickListener {
-            dialog.dismiss()
-            chooseDifficulty(it)
-        }
-
-        // Set the onClick for all buttons
-        for (view in diffs)
-            view.setOnClickListener(ocl)
-
-        // Change font for the dialog
-        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainDiffView))
-
-        // Show the dialog
-        dialog.show()
+        showDifficulty()
         //endregion
     }
 
@@ -430,8 +370,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Create random position for the treasure marker
-        val treasureLat = minLat + Math.random()*(maxLat - minLat)
-        val treasureLng = minLng + Math.random()*(maxLng - minLng)
+        val treasureLat = MIN_LAT + Math.random()*(MAX_LAT - MIN_LAT)
+        val treasureLng = MIN_LNG + Math.random()*(MAX_LNG - MIN_LNG)
 
         // Add treasure marker
         treasure = mMap.addMarker(MarkerOptions()
@@ -489,21 +429,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Logic after winning a game
+     * Logic after ending a game
      */
-    private fun endGame() {
+    private fun endGame(win: Boolean) {
         // Calculate the score
-        val gameScore = score((currentTime/1000).toInt(),
-                wordsFound.numberOfWordsFound,
-                wordsFound.numberOfWordsInGame,
-                difficulty,
-                numberOfWrongGuesses)
+        val gameScore =
+                if (win) score((currentTime/1000).toInt(),
+                        wordsFound.numberOfWordsFound,
+                        wordsFound.numberOfWordsInGame,
+                        difficulty,
+                        numberOfWrongGuesses)
+                else
+                    0
 
         // Update best score if necessary
         lifelongStatistics["Best score"] = Math.max(gameScore.toLong(), lifelongStatistics["Best score"]!!)
 
-        // Add one game to both won and played games
-        lifelongStatistics["Games won"] = lifelongStatistics["Games won"]!! + 1
+        // Increment number of played and won games if necessary
+        lifelongStatistics["Games won"] = lifelongStatistics["Games won"]!! + win.compareTo(false)
         lifelongStatistics["Games played"] = lifelongStatistics["Games played"]!! + 1
 
         // Add time spent in this game to the statistics
@@ -525,7 +468,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         editor.apply()
 
         // Show win dialog
-        showWin(gameScore)
+        showEndGame(win, gameScore)
     }
     //endregion
 
@@ -555,7 +498,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Animations to show all buttons
         // Help button
-        var showHelp = ValueAnimator.ofFloat(0f, 1f)
+        val showHelp = ValueAnimator.ofFloat(0f, 1f)
         showHelp.addUpdateListener {
             val value = showHelp.animatedValue as Float
             fab_help.alpha = value
@@ -564,7 +507,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         showHelp.interpolator = AccelerateInterpolator()
 
         // Stats button
-        var showStats = ValueAnimator.ofFloat(0f, 1f)
+        val showStats = ValueAnimator.ofFloat(0f, 1f)
         showStats.addUpdateListener {
             val value = showStats.animatedValue as Float
             fab_stats.alpha = value
@@ -574,7 +517,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         showStats.startDelay = 50
 
         // Restart button
-        var showRestart = ValueAnimator.ofFloat(0f, 1f)
+        val showRestart = ValueAnimator.ofFloat(0f, 1f)
         showRestart.addUpdateListener {
             val value = showRestart.animatedValue as Float
             fab_restart.alpha = value
@@ -584,7 +527,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         showRestart.startDelay = 100
 
         // Play all animations together (with given delays)
-        var animations = AnimatorSet()
+        val animations = AnimatorSet()
         animations.playTogether(showHelp, showStats, showRestart)
         animations.start()
     }
@@ -592,7 +535,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun closeMenu() {
         // Animations to hide all buttons
         // Help button
-        var hideHelp = ValueAnimator.ofFloat(1f, 0f)
+        val hideHelp = ValueAnimator.ofFloat(1f, 0f)
         hideHelp.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
@@ -610,7 +553,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         hideHelp.startDelay = 100
 
         // Stats button
-        var hideStats = ValueAnimator.ofFloat(1f, 0f)
+        val hideStats = ValueAnimator.ofFloat(1f, 0f)
         hideStats.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
@@ -628,7 +571,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         hideStats.startDelay = 50
 
         // Restart button
-        var hideRestart = ValueAnimator.ofFloat(1f, 0f)
+        val hideRestart = ValueAnimator.ofFloat(1f, 0f)
         hideRestart.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
@@ -645,7 +588,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         hideRestart.interpolator = DecelerateInterpolator()
 
         // Play all animations together (with given delays)
-        var animations = AnimatorSet()
+        val animations = AnimatorSet()
         animations.playTogether(hideHelp, hideStats, hideRestart)
         animations.start()
     }
@@ -683,7 +626,44 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun showGiveUp(view: View) {
-        showDialog(R.layout.dialog_giveup, R.id.mainGiveUpView)
+        // Set up the dialog
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_giveup, null)
+
+        mBuilder.setView(mView)
+        val dialog = mBuilder.create()
+
+        // If 15 seconds have passed, no longer can change difficulty
+        val playAgain = mView.findViewById<Button>(R.id.btnGiveUp)
+        if (currentTime/1000 > 15) {
+            // Change text, its colour and background
+            playAgain.background = getDrawable(R.drawable.no_rectangle)
+            playAgain.setTextColor(resources.getColor(R.color.colorNo))
+            playAgain.text = getString(R.string.givingUp)
+            // Set appropriate padding in dp
+            val scale = resources.displayMetrics.density
+            val pad = (10*scale + 0.5).toInt()
+            playAgain.setPadding(pad, pad, pad, pad)
+            // Set onClick listener to show losing dialog
+            playAgain.setOnClickListener {
+                dialog.dismiss()
+                endGame(false)
+            }
+        }
+        else {
+            playAgain.setOnClickListener {
+                dialog.dismiss()
+                clearMap()
+                showDifficulty()
+            }
+        }
+
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainGiveUpView))
+
+        // Show the dialog
+        dialog.show()
+        dialog.window.setLayout(600, 380)
     }
 
     fun showGuessWindow(view: View) {
@@ -725,7 +705,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
     }
 
-    private fun showWin(gameScore: Int) {
+    private fun showDifficulty() {
+        val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
+        val mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
+
+        mBuilder.setView(mView)
+        val dialog = mBuilder.create()
+
+        // Get all difficulty buttons
+        val cakewalk = mView.findViewById<Button>(R.id.btnCakewalk)
+        val easy = mView.findViewById<Button>(R.id.btnEasy)
+        val medium = mView.findViewById<Button>(R.id.btnMedium)
+        val hard = mView.findViewById<Button>(R.id.btnHard)
+        val vhard = mView.findViewById<Button>(R.id.btnVHard)
+        val diffs = arrayOf(cakewalk, easy, medium, hard, vhard)
+
+        // On click listener for all buttons
+        val ocl = View.OnClickListener {
+            dialog.dismiss()
+            chooseDifficulty(it)
+        }
+
+        // Set the onClick for all buttons
+        for (view in diffs)
+            view.setOnClickListener(ocl)
+
+        // Change font for the dialog
+        FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainDiffView))
+
+        // Show the dialog
+        dialog.show()
+    }
+
+    private fun showEndGame(win: Boolean, gameScore: Int) {
         // Set up the dialog
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(R.layout.dialog_win, null)
@@ -734,7 +746,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val dialog = mBuilder.create()
 
         // Set text of all text views
-        mView.findViewById<TextView>(R.id.totalGuesses).text = (numberOfWrongGuesses + 1).toString()
+        if (win)
+            mView.findViewById<TextView>(R.id.totalGuesses).text = (numberOfWrongGuesses + 1).toString()
+        else
+            mView.findViewById<TextView>(R.id.totalGuesses).text = numberOfWrongGuesses.toString()
         mView.findViewById<TextView>(R.id.totalPoints).text = gameScore.toString()
         mView.findViewById<TextView>(R.id.totalTime).text = getFormattedTime(currentTime)
         mView.findViewById<TextView>(R.id.songInformation).text = getString(R.string.songInfo,
@@ -744,19 +759,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Change font for the dialog
         FontChangeCrawler(tf).replaceFonts(mView.findViewById(R.id.mainWinView))
 
-        // On click listener for all buttons
-        val ocl = View.OnClickListener {
-            dialog.dismiss()
+        // If lost game, change the title text to lose
+        if (!win) {
+            val winText = mView.findViewById<TextView>(R.id.textWinInfo)
+            winText.text = getString(R.string.lose)
+            winText.setTextColor(resources.getColor(R.color.colorNo))
         }
 
         // Set the onClick for playAgain and stopPlaying
         val again = mView.findViewById<Button>(R.id.playAgainButton)
         again.setOnClickListener {
-            startGame()
+            showDifficulty()
             dialog.dismiss()
         }
         // If stop playing, set timer to 0 and close the window
-        // TODO: Enable playing again?
+        // TODO: Enable playing again after closing window?
         val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
         stop.setOnClickListener {
             startTime = SystemClock.uptimeMillis()
@@ -838,13 +855,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun makeGuess(view: View, guess: String) : Boolean {
         // If user guessed correctly, show the win dialog with statistics
         if (stringSimilarity(guess, currentSong.title) > 0.9) {
-            for ((marker, _) in markerToPoint) {
-                marker.remove()
-            }
+            clearMap()
             // Hide word view
             showWords(view)
             // Handle win
-            endGame()
+            endGame(true)
             return true
         }
         // If user guessed incorrectly, change button to red for 2 seconds
@@ -867,10 +882,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
+     * Clear all the markers from the map
+     */
+    private fun clearMap() {
+        for ((marker, _) in markerToPoint) {
+            marker.remove()
+        }
+        treasure.remove()
+    }
+
+    /**
      * Change the word view layout between list and count
      */
-    // TODO: Crashes on the phone, add onClick to switch view programatically
-    fun changeWordView(view: View) {
+    fun changeWordView() {
         viewType = if (viewType == ViewType.List)
             ViewType.Count
         else
@@ -889,7 +913,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         wordViewText.text = wordsFound.getWords(viewType)
     }
 
-    //region Timer
+    //region Time handling
     var handler = Handler()
     var startTime: Long = 0L
     var currentTime: Long = 0L
@@ -903,7 +927,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             handler.postDelayed(this, 1000)
         }
     }
-    //endregion
 
     /**
      * Returns properly formatted current game time
@@ -924,6 +947,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     String.format("%02d", minutes%60),
                     String.format("%02d", seconds%60))
     }
+    //endregion
 
     //region Scoring
     private fun score(time: Int, wordsNeeded: Int, wordsTotal: Int, difficulty: Difficulty, guesses: Int): Int {

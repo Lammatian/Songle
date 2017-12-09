@@ -7,9 +7,6 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Created by mateusz on 03/12/17.
- */
 interface DownloadCompleteListener{
     fun onDownloadComplete(result: String)
 }
@@ -30,15 +27,10 @@ class DownloadLyricsTask(private val caller: DownloadCompleteListener) :
     }
 
     private fun loadLyricsFromNetwork(urlString: String): String {
-        // TODO: Punctuation parsing?
         val stream = downloadUrl(urlString)
 
-        // get lyrics of the song
-        val lyrics = stream.bufferedReader().use{it.readText()}
-
-        return lyrics
-        // return lyrics split by lines and by spaces
-//        return lyrics.split("\n").map{it.split(" ")}
+        // get and return lyrics of the song
+        return stream.bufferedReader().use{it.readText()}
     }
 
     // TODO: Move to more general place for no code repetition

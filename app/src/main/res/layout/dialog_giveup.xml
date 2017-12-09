@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:id="@+id/mainGiveUpView"
-    android:padding="20dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:id="@+id/mainGiveUpView">
 
     <TextView
         android:id="@+id/giveUpText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
+        android:textColor="@color/colorAccent"
         android:layout_margin="10dp"
         android:textSize="30sp"
         android:text="@string/giveUp"/>
@@ -22,25 +21,15 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal">
 
-
-        <ImageButton
+        <Button
+            android:id="@+id/btnGiveUp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_yes"
-            android:background="@drawable/choice_circle"
-            android:layout_marginEnd="40dp"
+            android:background="@drawable/yes_rectangle"
+            android:textColor="@color/colorPrimaryDark"
+            android:text="@string/changeDiff"
             android:padding="10dp"
-            app:layout_anchorGravity="left|bottom"
-            app:layout_anchor="@id/giveUpText"/>
-
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_no"
-            android:background="@drawable/no_circle"
-            android:padding="10dp"
-            app:layout_anchorGravity="right|bottom"
-            app:layout_anchor="@id/giveUpText"/>
+            android:textSize="15sp"/>
     </LinearLayout>
 
 </LinearLayout>
