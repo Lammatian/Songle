@@ -69,6 +69,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var points: List<MapPoint>
     private lateinit var treasure: Marker
     private lateinit var treasureLoc: Location
+    private lateinit var treasureLine: List<String>
+    private var treasureLineNumber = -1
     private lateinit var lyrics: List<List<String>>
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var guessPenalty: List<Double>
@@ -311,8 +313,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Sort out treasure separately
                 if (marker == treasure) {
                     showTreasure()
-                    // TODO: Proper implementation
-                    wordsFound.addLine(ArrayList(0), 0)
+                    updateWithNewLine()
                     return true
                 }
 
@@ -377,7 +378,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         treasure = mMap.addMarker(MarkerOptions()
                 .position(LatLng(treasureLat, treasureLng))
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_treasure))
-                .visible(false))
+                .visible(true))
 
         // Save treasure location for easier management
         treasureLoc = Location("")
@@ -387,6 +388,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //endregion
 
     //region Game logic
+    /**
+     * Choose difficulty and start the game
+     */
+    private fun chooseDifficulty(view: View) {
+        difficulty = when (view.id) {
+            R.id.btnCakewalk -> Difficulty.Cakewalk
+            R.id.btnEasy     -> Difficulty.Easy
+            R.id.btnMedium   -> Difficulty.Medium
+            R.id.btnHard     -> Difficulty.Hard
+            R.id.btnVHard    -> Difficulty.VeryHard
+            else             -> Difficulty.Medium
+        }
+
+        startGame()
+    }
+
+    /**
+     * Initialization of the game
+     */
     private fun startGame() {
         // Set number of wrong guesses to 0
         numberOfWrongGuesses = 0
@@ -410,6 +430,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Get lyrics for the song
         lyrics = songDB.songDao().getLyricsByNumber(choice).lyrics.split("\n").map{it.split(" ")}
 
+        // Pick treasure and make sure it's not an empty line
+        treasureLineNumber = (Math.random()*lyrics.size).toInt()
+
+        while (lyrics[treasureLineNumber].size < 2)
+            treasureLineNumber = (Math.random()*lyrics.size).toInt()
+
+        treasureLine = lyrics[treasureLineNumber]
+
         // Initialize wordsInGame
         wordsInGame = hashMapOf()
         for (point in points) {
@@ -419,6 +447,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initialize wordFound
         wordsFound = WordsFound(lyrics, wordsInGame)
+        wordViewText.text = wordsFound.getWords(viewType)
 
         // Set treasure and map
         placeWords(points)
@@ -470,9 +499,71 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Show win dialog
         showEndGame(win, gameScore)
     }
+
+    /**
+     * Handle correct and incorrect user guess
+     */
+    private fun makeGuess(view: View, guess: String) : Boolean {
+        // If user guessed correctly, show the win dialog with statistics
+        if (stringSimilarity(guess, currentSong.title) > 0.9) {
+            clearMap()
+            // Hide word view
+            showWords(view)
+            // Handle win
+            endGame(true)
+            return true
+        }
+        // If user guessed incorrectly, change button to red for 2 seconds
+        // TODO: Shake the button a bit as well
+        else {
+            val button = view.findViewById<ImageButton>(R.id.makeGuess)
+            button.background = resources.getDrawable(R.drawable.no_circle)
+            object: CountDownTimer(2000, 2000) {
+                override fun onTick(p0: Long) {
+                }
+
+                override fun onFinish() {
+                    button.background = resources.getDrawable(R.drawable.choice_circle)
+                }
+            }.start()
+            // User guessed incorrectly
+            numberOfWrongGuesses += 1
+            return false
+        }
+    }
+
+    /**
+     * Clear all the markers from the map
+     */
+    private fun clearMap() {
+        for ((marker, _) in markerToPoint) {
+            marker.remove()
+        }
+        treasure.remove()
+    }
+
+    /**
+     * Put new word into the collection of found words
+     */
+    fun updateWithNewWord(place: ArrayList<Int>) {
+        // Update word found database
+        wordsFound.addWord(place)
+        // Update text shown to user
+        wordViewText.text = wordsFound.getWords(viewType)
+    }
+
+    /**
+     * Put the treasure line into the wordsfound database and update word view
+     */
+    fun updateWithNewLine() {
+        // Update word found database with a line
+        wordsFound.addLine(treasureLine, treasureLineNumber)
+        // Update text shown to user
+        wordViewText.text = wordsFound.getWords(viewType)
+    }
     //endregion
 
-    //#region Menu Open/Close
+    //#region GUI Handlers
     // Variable checking if menu is opened or not
     private var opened = false
 
@@ -592,6 +683,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         animations.playTogether(hideHelp, hideStats, hideRestart)
         animations.start()
     }
+
+    fun showWords(view: View) {
+        if (wordView.visibility == View.INVISIBLE)
+            wordView.visibility = View.VISIBLE
+        else
+            wordView.visibility = View.INVISIBLE
+    }
+
+    /**
+     * Change the word view layout between list and count
+     */
+    private fun changeWordView() {
+        viewType = if (viewType == ViewType.List)
+            ViewType.Count
+        else
+            ViewType.List
+
+        wordViewText.text = wordsFound.getWords(viewType)
+    }
     //#endregion
 
     //region Dialogs
@@ -702,7 +812,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun showTreasure() {
-        showDialog(R.layout.dialog_treasure, R.id.mainTreasureView)
+        val texts = hashMapOf(
+                R.id.line to treasureLine.joinToString(" "),
+                R.id.lineNumber to "[Line " + treasureLineNumber.toString() + "]"
+        )
+
+        showDialog(R.layout.dialog_treasure, R.id.mainTreasureView, texts = texts)
     }
 
     private fun showDifficulty() {
@@ -824,95 +939,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     //endregion
 
-    /**
-     * Choose difficulty and start the game
-     */
-    private fun chooseDifficulty(view: View) {
-        difficulty = when (view.id) {
-            R.id.btnCakewalk -> Difficulty.Cakewalk
-            R.id.btnEasy     -> Difficulty.Easy
-            R.id.btnMedium   -> Difficulty.Medium
-            R.id.btnHard     -> Difficulty.Hard
-            R.id.btnVHard    -> Difficulty.VeryHard
-            else             -> Difficulty.Medium
-        }
-
-        wordViewText.text = difficulty.name
-
-        startGame()
-    }
-
-    fun showWords(view: View) {
-        if (wordView.visibility == View.INVISIBLE)
-            wordView.visibility = View.VISIBLE
-        else
-            wordView.visibility = View.INVISIBLE
-    }
-
-    /**
-     * Handle correct and incorrect user guess
-     */
-    private fun makeGuess(view: View, guess: String) : Boolean {
-        // If user guessed correctly, show the win dialog with statistics
-        if (stringSimilarity(guess, currentSong.title) > 0.9) {
-            clearMap()
-            // Hide word view
-            showWords(view)
-            // Handle win
-            endGame(true)
-            return true
-        }
-        // If user guessed incorrectly, change button to red for 2 seconds
-        // TODO: Shake the button a bit as well
-        else {
-            val button = view.findViewById<ImageButton>(R.id.makeGuess)
-            button.background = resources.getDrawable(R.drawable.no_circle)
-            object: CountDownTimer(2000, 2000) {
-                override fun onTick(p0: Long) {
-                }
-
-                override fun onFinish() {
-                    button.background = resources.getDrawable(R.drawable.choice_circle)
-                }
-            }.start()
-            // User guessed incorrectly
-            numberOfWrongGuesses += 1
-            return false
-        }
-    }
-
-    /**
-     * Clear all the markers from the map
-     */
-    private fun clearMap() {
-        for ((marker, _) in markerToPoint) {
-            marker.remove()
-        }
-        treasure.remove()
-    }
-
-    /**
-     * Change the word view layout between list and count
-     */
-    fun changeWordView() {
-        viewType = if (viewType == ViewType.List)
-            ViewType.Count
-        else
-            ViewType.List
-
-        wordViewText.text = wordsFound.getWords(viewType)
-    }
-
-    /**
-     * Put new word into the collection of found words
-     */
-    fun updateWithNewWord(place: ArrayList<Int>) {
-        // Update word found database
-        wordsFound.addWord(place)
-        // Update text shown to user
-        wordViewText.text = wordsFound.getWords(viewType)
-    }
-
     //region Time handling
     var handler = Handler()
     var startTime: Long = 0L
@@ -1000,5 +1026,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         return 2.0*(p1.intersect(p2).size) / (p1.size + p2.size)
+    }
+
+    fun toMain(view: View) {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
     }
 }

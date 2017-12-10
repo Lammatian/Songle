@@ -20,7 +20,7 @@ enum class WordValue {
 
 data class Word(val word: String, val interest: WordValue)
 
-class WordsFound(lyrics: List<List<String>>,
+class WordsFound(private val lyrics: List<List<String>>,
                  private val wordsInGame: HashMap<ArrayList<Int>, Word>) {
 
     private var wordsList: ArrayList<ArrayList<String>> = ArrayList(lyrics.size)
@@ -33,8 +33,10 @@ class WordsFound(lyrics: List<List<String>>,
     )
     var numberOfWordsInGame: Int = wordsInGame.size
     var numberOfWordsFound: Int = 0
+    private lateinit var treasureLine: List<String>
+    private var treasureNumber = -1
 
-    // Constructor
+    //region Constructor
     init {
         wordsList = ArrayList(lyrics.size)
         for (i in 0 until lyrics.size) {
@@ -43,6 +45,7 @@ class WordsFound(lyrics: List<List<String>>,
                 wordsList[i].add("")
         }
     }
+    //endregion
 
     /**
      * Add a word both to the list and the count
@@ -64,15 +67,14 @@ class WordsFound(lyrics: List<List<String>>,
     /**
      * Add a whole line
      */
-    fun addLine(line: ArrayList<String>, number: Int) {
-        // TODO: Implement
+    fun addLine(line: List<String>, number: Int) {
+        treasureLine = line
+        treasureNumber = number
     }
 
     /**
      * Get the string representing given type of words
      */
-    // TODO: Sort wordsCount by interest
-    // TODO: Better error handling
     fun getWords(type: ViewType): Spanned {
         // As list
         if (type == ViewType.List) {
@@ -83,6 +85,12 @@ class WordsFound(lyrics: List<List<String>>,
                 result += (i+1).toString() + ". "
                 val line = wordsList[i]
                 var underscorePlaced = false
+
+                // If the line is the treasure line, print it as a whole in different colour
+                if (i == treasureNumber) {
+                    result += "<font color='#FFC107'>" + treasureLine.joinToString(" ") + "</font><br>"
+                    continue
+                }
 
                 if (line[0] == "") {
                     result += "_ "
@@ -107,17 +115,18 @@ class WordsFound(lyrics: List<List<String>>,
 
             return Html.fromHtml(result)
         }
-        // As count
+        // As count, count won't show the line at all
         else if (type == ViewType.Count) {
             // For nice result
             var result = ""
             val valueToColor = hashMapOf(
-                    WordValue.Unclassified to "<font color='#757575'>Unclassified</font>",
-                    WordValue.Boring to "<font color='#388E3C'>Boring</font>",
-                    WordValue.Notboring to "<font color='#FFC107'>Not Boring</font>",
-                    WordValue.Interesting to "<font color='#FF9800'>Interesting</font>",
-                    WordValue.Veryinteresting to "<font color='#AA0000'>Very Interesting</font>"
+                    WordValue.Unclassified to "<font color='#757575'>Unclassified</font><br>",
+                    WordValue.Boring to "<font color='#388E3C'>Boring</font><br>",
+                    WordValue.Notboring to "<font color='#FFC107'>Not Boring</font><br>",
+                    WordValue.Interesting to "<font color='#FF9800'>Interesting</font><br>",
+                    WordValue.Veryinteresting to "<font color='#AA0000'>Very Interesting</font><br>"
             )
+            val valueCounts = arrayOf("", "", "", "", "")
 
             // For each WordValue get all words
             for ((key, value) in wordsCount) {
@@ -126,11 +135,22 @@ class WordsFound(lyrics: List<List<String>>,
                     continue
 
                 // Print the value and then all words and their counts
-                result += valueToColor[key] + "<br>"
+                var words = valueToColor[key]!!
+
                 for ((word, count) in value) {
-                    result += word + " x" + count.toString() + "<br>"
+                    words += word + " x" + count.toString() + "<br>"
+                }
+
+                when (key) {
+                    WordValue.Unclassified    -> valueCounts[4] = words
+                    WordValue.Boring          -> valueCounts[3] = words
+                    WordValue.Notboring       -> valueCounts[2] = words
+                    WordValue.Interesting     -> valueCounts[1] = words
+                    WordValue.Veryinteresting -> valueCounts[0] = words
                 }
             }
+
+            result = valueCounts.joinToString("")
 
             return Html.fromHtml(result)
         }

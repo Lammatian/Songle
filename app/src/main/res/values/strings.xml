@@ -46,4 +46,5 @@
     <string name="changeDiff">Make it easier</string>
     <string name="givingUp">Way too hard</string>
     <string name="idea">Guess</string>
+    <string name="treasureDesc">Treasure</string>
 </resources>

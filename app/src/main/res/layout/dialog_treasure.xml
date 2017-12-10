@@ -12,13 +12,13 @@
         android:layout_height="100dp"
         android:layout_marginEnd="-20dp"
         android:layout_marginStart="-10dp"
+        android:contentDescription="@string/treasureDesc"
         android:src="@mipmap/ic_treasure" />
 
     <TextView
         android:id="@+id/line"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scaramouche, Scaramouche, will you do the Fandango?"
         android:textColor="@color/colorAccent"
         android:textSize="18sp"
         android:layout_toEndOf="@id/treasure1"
@@ -34,17 +34,18 @@
         android:layout_height="100dp"
         android:layout_marginStart="-20dp"
         android:layout_marginEnd="-10dp"
+        android:contentDescription="@string/treasureDesc"
         android:src="@mipmap/ic_treasure"
         android:layout_alignParentEnd="true"/>
 
     <TextView
+        android:id="@+id/lineNumber"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/line"
         android:layout_toEndOf="@id/treasure1"
         android:layout_toStartOf="@id/treasure2"
         android:layout_marginTop="5dp"
-        android:text="[Line 35]"
         android:gravity="center"/>
 
 </RelativeLayout>

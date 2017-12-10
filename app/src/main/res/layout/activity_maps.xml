@@ -93,7 +93,7 @@
         android:layout_margin="10dp"
         android:clickable="true"
         android:focusable="true"
-        android:onClick="showWords"
+        android:onClick="toMain"
         app:fabSize="normal"
         android:src="@drawable/ic_format_list_numbered_black_24px"
         app:backgroundTint="@color/colorMainFAB"/>

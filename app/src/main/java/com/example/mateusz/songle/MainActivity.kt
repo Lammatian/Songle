@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.widget.Toolbar
+import android.widget.ListView
 
 
 class MainActivity : AppCompatActivity() {
@@ -30,6 +31,10 @@ class MainActivity : AppCompatActivity() {
 
         tabLayout = findViewById(R.id.tabs)
         tabLayout!!.setupWithViewPager(viewPager)*/
+        val listView = findViewById<ListView>(R.id.lv)
+        val values = arrayListOf("One", "Two", "Three")
+        val adapter = WordFeedAdapter(this, R.layout.dummy_item, values)
+        listView.adapter = adapter
     }
 
     /*fun setupViewPager(viewPager: ViewPager?) {

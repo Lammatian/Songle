@@ -8,72 +8,12 @@
     android:gravity="center_horizontal"
     tools:context="com.example.mateusz.songle.MainActivity">
 
-    <TextView
+    <ListView
+        android:id="@+id/lv"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Choose Difficulty"
-        android:textSize="30sp"
-        android:layout_margin="10dp"
-        android:layout_centerHorizontal="true"/>
+        android:layout_height="wrap_content">
 
-    <!--TODO: Change to scrollable list-->
-    <Button
-        android:id="@+id/btnCakewalk"
-        android:layout_width="70dp"
-        android:alpha="0.3"
-        android:textSize="5sp"
-        android:layout_height="25dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_above="@id/btnEasy"
-        android:layout_marginBottom="-3dp"
-        android:text="Cakewalk"/>
-
-    <Button
-        android:id="@+id/btnEasy"
-        android:layout_width="120dp"
-        android:alpha="0.7"
-        android:textSize="13sp"
-        android:layout_height="35dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_above="@+id/btnMedium"
-        android:layout_marginBottom="-3dp"
-        android:text="Easy"/>
-
-    <Button
-        android:id="@+id/btnMedium"
-        android:layout_width="150dp"
-        android:alpha="1"
-        android:textSize="17sp"
-        android:layout_height="45dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:text="Medium"/>
-
-    <Button
-        android:id="@+id/btnHard"
-        android:layout_width="120dp"
-        android:alpha="0.7"
-        android:textSize="13sp"
-        android:layout_height="35dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_below="@id/btnMedium"
-        android:layout_marginTop="-3dp"
-        android:text="Hard"/>
-
-    <Button
-        android:id="@+id/btnVHard"
-        android:layout_width="70dp"
-        android:alpha="0.3"
-        android:textSize="5sp"
-        android:layout_height="25dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_below="@id/btnHard"
-        android:layout_marginTop="-3dp"
-        android:text="Very hard"/>
+    </ListView>
 
     <!--<android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
