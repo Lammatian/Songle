@@ -17,7 +17,7 @@ class SongsParser {
      * Check if the song file is up to date
      */
     @Throws(XmlPullParserException::class, IOException::class)
-    fun isUpToDate(input: InputStream, timestamp: Date): Boolean {
+    fun getTimestamp(input: InputStream): Date {
         input.use {
             val parser = Xml.newPullParser()
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
@@ -26,10 +26,7 @@ class SongsParser {
             parser.require(XmlPullParser.START_TAG, ns, "Songs")
 
             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH)
-            val songFileDate = format.parse(parser.getAttributeValue(0))
-
-            // For some reason comparing strings is required
-            return songFileDate.toString() == timestamp.toString()
+            return format.parse(parser.getAttributeValue(0))
         }
     }
 

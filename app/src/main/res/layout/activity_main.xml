@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.widget.LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mainView"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_horizontal"
+    android:background="@color/colorPrimaryDark"
     tools:context="com.example.mateusz.songle.MainActivity">
 
-    <ListView
-        android:id="@+id/lv"
+    <Button
+        android:id="@+id/press"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Press"/>
 
-    </ListView>
+    <Button
+        android:id="@+id/animate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Animate"/>
 
     <!--<android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -42,4 +48,4 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />-->
 
-</android.widget.LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

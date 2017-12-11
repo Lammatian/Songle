@@ -20,6 +20,9 @@ import com.example.mateusz.songle.Difficulty
     @Query("select * from Maps where number = :number and difficulty = :difficulty")
     fun getMap(number: Int, difficulty: Difficulty) : SongMap
 
+    @Query("select count(*) from Songs")
+    fun getNumberOfSongs(): Int
+
     @Insert(onConflict = REPLACE)
     fun insertSong(song: Song)
 

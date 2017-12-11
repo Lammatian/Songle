@@ -20,6 +20,7 @@ import android.location.Location
 import android.net.ConnectivityManager
 import android.os.*
 import android.preference.PreferenceManager
+import android.support.design.widget.CoordinatorLayout
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.text.Html
@@ -111,6 +112,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var numberOfWrongGuesses: Int = 0
     private lateinit var newSongs: List<Song>
     private lateinit var songs: List<Song>
+    private var wordFeed: ArrayList<Button> = ArrayList()
 
     // TODO: Implement
     //region Network receiver
@@ -184,30 +186,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // TODO: When loading, show some information
         songDB = Room.databaseBuilder(applicationContext, SongDatabase::class.java, "Songs")
                 .allowMainThreadQueries().fallbackToDestructiveMigration().build()
+        numberOfSongs = songDB.songDao().getNumberOfSongs()
 
         // Check for new songs
-        val url = baseUrl + "/songs/songs.xml"
-        val parsedSongs = DownloadNewSongsTask(Dcl(), url, timestamp, numberOfSongs).execute()
-        newSongs = parsedSongs.get() as List<Song>
+        val songUrl = baseUrl + "/songs/songs.xml"
+        val serverTimestampTask = GetTimestampTask(Dcl()).execute(songUrl)
+        val serverTimestamp = serverTimestampTask.get() as Date
 
-        // Add new songs, lyrics and map points to the database
-        for (i in 0 until newSongs.size) {
-            songDB.songDao().insertSong(newSongs[i])
+        if (serverTimestamp != timestamp) {
+            val parsedSongs = DownloadNewSongsTask(Dcl(), songUrl, numberOfSongs).execute()
+            newSongs = parsedSongs.get() as List<Song>
 
-            val newSongNum = numberOfSongs + 1 + i
+            // Add new songs, lyrics and map points to the database
+            for (i in 0 until newSongs.size) {
+                songDB.songDao().insertSong(newSongs[i])
 
-            // Download lyrics to new songs
-            val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/lyrics.txt"
-            val parsedLyrics = DownloadLyricsTask(Dcl()).execute(lyricsUrl)
-            val lyrics = parsedLyrics.get()!!
-            songDB.songDao().insertLyrics(Lyrics(newSongNum, lyrics))
+                val newSongNum = numberOfSongs + 1 + i
 
-            // Download all maps to new songs
-            for (j in 1..5) {
-                val mapUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/map" + j.toString() + ".kml"
-                val parsedMap = DownloadMapTask(Dcl()).execute(mapUrl)
-                val map = parsedMap.get()!!
-                songDB.songDao().insertMap(SongMap(newSongNum, numberToDifficulty[j]!!, map))
+                // Download lyrics to new songs
+                val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/lyrics.txt"
+                val parsedLyrics = DownloadLyricsTask(Dcl()).execute(lyricsUrl)
+                val lyrics = parsedLyrics.get()!!
+                songDB.songDao().insertLyrics(Lyrics(newSongNum, lyrics))
+
+                // Download all maps to new songs
+                for (j in 1..5) {
+                    val mapUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/map" + j.toString() + ".kml"
+                    val parsedMap = DownloadMapTask(Dcl()).execute(mapUrl)
+                    val map = parsedMap.get()!!
+                    songDB.songDao().insertMap(SongMap(newSongNum, numberToDifficulty[j]!!, map))
+                }
             }
         }
 
@@ -216,7 +224,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Update timestamp
         val editor = sharedPreferences.edit()
-        editor.putString("timestamp", timestamp.toString())
+        editor.putString("timestamp", serverTimestamp.toString())
         editor.apply()
 
         // Update number of songs
@@ -312,13 +320,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 // Sort out treasure separately
                 if (marker == treasure) {
+                    treasure.remove()
                     showTreasure()
                     updateWithNewLine()
+                    addWordFeedItem(treasureLine.joinToString(" ") + "[" + treasureLineNumber + "]", true)
                     return true
                 }
 
                 // Word found popup dialog with custom style
-                // TODO: Dialog of appropriate width
                 val point = markerToPoint[marker]
                 val text = hashMapOf(
                         R.id.place to "[" + point!!.name.joinToString(",") + "]",
@@ -329,17 +338,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 updateWithNewWord(arrayListOf(point.name[0], point.name[1]))
                 marker.remove()
 
-                // TODO: This should spawn a imagebutton in WordFeed
-//                    object: CountDownTimer(5000, 5000) {
-//
-//                        override fun onTick(p0: Long) {
-//                            wordView.visibility = View.VISIBLE
-//                        }
-//
-//                        override fun onFinish() {
-//                            wordView.visibility = View.INVISIBLE
-//                        }
-//                    }.start()
+                // Add word to word feed
+                addWordFeedItem(text[R.id.wordFound] + " " + text[R.id.place])
 
                 // TODO: Remove this shit from here to onLocationChanged
                 if (myLoc.distanceTo(treasureLoc) < 100) {
@@ -701,6 +701,82 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             ViewType.List
 
         wordViewText.text = wordsFound.getWords(viewType)
+    }
+
+    /**
+     * Add a button with last found word to word feed
+     */
+    private fun addWordFeedItem(text: String, isTreasure: Boolean = false) {
+        // Scale from int to dp
+        val scale = resources.displayMetrics.density
+        // Move all the buttons down by changing their top margin by 50dp
+        for (word in wordFeed) {
+            val l = word.layoutParams as ViewGroup.MarginLayoutParams
+            var topMargin = l.topMargin
+            topMargin += (scale*50 + 0.5).toInt()
+            l.setMargins(l.leftMargin, topMargin, l.rightMargin, l.bottomMargin)
+            word.layoutParams = l
+        }
+        // Set new button's layout parameters
+        val padding = (10*scale + 0.5).toInt()
+        val layout = findViewById<CoordinatorLayout>(R.id.mainMapView)
+        val button = Button(this)
+        val lp = CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.WRAP_CONTENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT)
+        lp.gravity = Gravity.END
+        lp.setMargins(0, (scale*60 + 0.5).toInt(), (scale*10 + 0.5).toInt(), 0)
+        button.layoutParams = lp
+        // Set button's appearance
+        // Words have normal background
+        if (!isTreasure) {
+            button.background = getDrawable(R.drawable.rectangle)
+            button.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_audiotrack_black_24px, 0, 0, 0)
+        }
+        // Treasure has special background
+        else {
+            button.background = getDrawable(R.drawable.treasure_rectangle)
+            button.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_audiotrack_black_24px, 0, 0, 0)
+        }
+        button.setPadding(padding, padding, padding, padding)
+        // Add an option for the player to see the word he found
+        button.setOnClickListener {
+            _ ->
+            if (button.text == "") {
+                button.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                button.text = text
+            } else {
+                button.text = ""
+                button.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_audiotrack_black_24px, 0, 0, 0)
+            }
+        }
+        // Keep track of all the buttons
+        wordFeed.add(button)
+        layout.addView(button)
+        // Make the button disappear after 10 seconds by fading away
+        object: CountDownTimer(10000, 10000) {
+            override fun onTick(p0: Long) {
+            }
+
+            override fun onFinish() {
+                val removeButton = ValueAnimator.ofFloat(1f, 0f)
+                // Removing button on animation end
+                removeButton.addListener(object: Animator.AnimatorListener {
+                    override fun onAnimationStart(p0: Animator?) {}
+                    override fun onAnimationCancel(p0: Animator?) {}
+                    override fun onAnimationRepeat(p0: Animator?) {}
+                    override fun onAnimationEnd(p0: Animator?) {
+                        layout.removeView(button)
+                        wordFeed.remove(button)
+                    }
+                })
+                // Button fading
+                removeButton.addUpdateListener {
+                    val value = removeButton.animatedValue as Float
+                    button.alpha = value
+                }
+                removeButton.duration = 500
+                removeButton.start()
+            }
+        }.start()
     }
     //#endregion
 

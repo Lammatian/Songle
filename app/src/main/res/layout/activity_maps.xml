@@ -93,7 +93,7 @@
         android:layout_margin="10dp"
         android:clickable="true"
         android:focusable="true"
-        android:onClick="toMain"
+        android:onClick="showWords"
         app:fabSize="normal"
         android:src="@drawable/ic_format_list_numbered_black_24px"
         app:backgroundTint="@color/colorMainFAB"/>
@@ -185,54 +185,6 @@
         app:fabSize="mini"
         app:layout_anchor="@id/dummy4"
         app:layout_anchorGravity="top"/>
-    <!--endregion-->
-
-    <!--region Word Feed testing-->
-    <!--TODO: Elevation, content description?-->
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="60dp"
-        android:visibility="invisible"
-        android:src="@drawable/ic_audiotrack_black_24px"
-        android:background="@drawable/rectangle"
-        android:padding="10dp"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="60dp"
-        android:visibility="invisible"
-        android:text="Scaramouche [35,1]"
-        android:textColor="@color/colorPrimaryText"
-        android:background="@drawable/rectangle"
-        android:padding="10dp"/>
-
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="110dp"
-        android:visibility="invisible"
-        android:src="@drawable/ic_audiotrack_black_24px"
-        android:background="@drawable/rectangle"
-        android:padding="10dp"/>
-
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="160dp"
-        android:visibility="invisible"
-        android:src="@drawable/ic_audiotrack_black_24px"
-        android:background="@drawable/rectangle"
-        android:padding="10dp"/>
     <!--endregion-->
 
     <!--region Time-->

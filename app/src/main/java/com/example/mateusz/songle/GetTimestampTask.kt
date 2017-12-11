@@ -1,7 +1,6 @@
 package com.example.mateusz.songle
 
 import android.os.AsyncTask
-import com.example.mateusz.songle.songdb.Song
 import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.io.InputStream
@@ -9,14 +8,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 
-class DownloadNewSongsTask(private val caller: DownloadCompleteListener,
-                        private val url: String,
-                        private val numberOfSongs: Int) :
-        AsyncTask<Void, Void, List<Song>?>() {
+class GetTimestampTask(private val caller: DownloadCompleteListener) :
+        AsyncTask<String, Void, Date?>() {
 
-    override fun doInBackground(vararg urls: Void): List<Song>? {
+    override fun doInBackground(vararg urls: String): Date? {
         return try {
-            loadSongsFromNetwork(url, numberOfSongs)
+            loadSongsFromNetwork(urls[0])
         }
         catch (e: IOException) {
             null
@@ -26,16 +23,15 @@ class DownloadNewSongsTask(private val caller: DownloadCompleteListener,
         }
     }
 
-    private fun loadSongsFromNetwork(urlString: String, numberOfSongs: Int): List<Song>? {
-        // Get the stream from url
+    private fun loadSongsFromNetwork(urlString: String): Date {
         val stream = downloadUrl(urlString)
+
+        // parse XML
         val parser = SongsParser()
 
-        // If not up to date, download new songs
-        return parser.parse(stream, numberOfSongs)
+        return parser.getTimestamp(stream)
     }
 
-    // TODO: Move somewhere more general for less code repetition
     @Throws(IOException::class)
     private fun downloadUrl(urlString: String): InputStream {
         val url = URL(urlString)
@@ -51,8 +47,7 @@ class DownloadNewSongsTask(private val caller: DownloadCompleteListener,
         return conn.inputStream
     }
 
-    // TODO: Is that at all necessary? Use dcl better
-    override fun onPostExecute(result: List<Song>?) {
+    override fun onPostExecute(result: Date?) {
         super.onPostExecute(result)
         caller.onDownloadComplete(result.toString())
     }
