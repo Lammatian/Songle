@@ -35,6 +35,8 @@ import com.example.mateusz.songle.songdb.Lyrics
 import com.example.mateusz.songle.songdb.Song
 import com.example.mateusz.songle.songdb.SongDatabase
 import com.example.mateusz.songle.songdb.SongMap
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.activity_maps.*
 import java.io.BufferedReader
@@ -112,6 +114,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var numberOfWrongGuesses: Int = 0
     private lateinit var newSongs: List<Song>
     private lateinit var songs: List<Song>
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+    private lateinit var playerLocation: Location
     private var wordFeed: ArrayList<Button> = ArrayList()
 
     // TODO: Implement
@@ -254,9 +258,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Move camera to player location
-        // TODO: Get location and zoom to the location (OnLocationChanged method)
         val zoom = 16f
-        val edi = LatLng(55.946, -3.1888)
+        val edi = LatLng((MAX_LAT + MIN_LAT)/2.0, (MAX_LNG + MIN_LNG)/2.0)
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(edi, zoom))
 
         // Current position on the map
@@ -270,9 +273,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
-        //mMap.isMyLocationEnabled = true
 
-        // TODO: First if statement doesn't work
         //region Location services
         // Ask for location services if needed
         if (ContextCompat.checkSelfPermission(this,
@@ -293,29 +294,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         .create()
                         .show()
             }
-        }
-        else {
-            ActivityCompat.requestPermissions(this,
-                    Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
-                    99)
+            else {
+                ActivityCompat.requestPermissions(this,
+                        Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
+                        99)
+            }
         }
         //endregion
+
+        // Get player location
+        playerLocation = Location("")
+        playerLocation.longitude = edi.longitude
+        playerLocation.latitude = edi.latitude
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        mFusedLocationClient.lastLocation.addOnSuccessListener {
+            location ->
+            if (location != null) {
+                playerLocation = location
+                val playerLatLng = LatLng(playerLocation.latitude, playerLocation.longitude)
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(playerLatLng, zoom))
+
+                if (treasureLineNumber > 0 && playerLocation.distanceTo(treasureLoc) < 100) {
+                    treasure.isVisible = true
+                }
+            }
+        }
 
         //region Marker click handling
         // Set listener for click on the button
         mMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
             override fun onMarkerClick(marker: Marker): Boolean {
                 // Get location of player and marker
-                // TODO: Get proper location of the player
-                val myLoc = Location("")
-                myLoc.latitude = edi.latitude
-                myLoc.longitude = edi.longitude
                 val markerLoc = Location("")
                 markerLoc.latitude = marker.position.latitude
                 markerLoc.longitude = marker.position.longitude
 
                 // Check if player can pick up the word from current distance
-                if (myLoc.distanceTo(markerLoc) > 1000)
+                if (playerLocation.distanceTo(markerLoc) > 1000)
                     return true
 
                 // Sort out treasure separately
@@ -323,7 +338,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     treasure.remove()
                     showTreasure()
                     updateWithNewLine()
-                    addWordFeedItem(treasureLine.joinToString(" ") + "[" + treasureLineNumber + "]", true)
+                    addWordFeedItem(treasureLine.joinToString(" ") + " [" + treasureLineNumber + "]", true)
                     return true
                 }
 
@@ -340,11 +355,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 // Add word to word feed
                 addWordFeedItem(text[R.id.wordFound] + " " + text[R.id.place])
-
-                // TODO: Remove this shit from here to onLocationChanged
-                if (myLoc.distanceTo(treasureLoc) < 100) {
-                    treasure.isVisible = true
-                }
 
                 // Stop the default reaction to clicking a marker
                 return true
@@ -566,68 +576,82 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //#region GUI Handlers
     // Variable checking if menu is opened or not
     private var opened = false
+    private var help = ValueAnimator.ofFloat(0f, 1f)
+    private var stats = ValueAnimator.ofFloat(0f, 1f)
+    private var restart = ValueAnimator.ofFloat(0f, 1f)
 
-    fun menuOpenClose(view: View) {
-        if (!opened)
-            openMenu()
-        else
-            closeMenu()
+    private fun menuOpen() {
+        help.cancel()
+        stats.cancel()
+        restart.cancel()
 
-        opened = !opened
-    }
-
-    private fun openMenu() {
-        // TODO: When closing and opening quickly, buttons don't show up
-        // TODO: On animation end in opening set visibility to true OR cancel hide animations
-        // Set visibility of all buttons to visible and opacity to 0
-        fab_help.alpha = 0f
-        fab_stats.alpha = 0f
-        fab_restart.alpha = 0f
-        fab_help.visibility = View.VISIBLE
-        fab_stats.visibility = View.VISIBLE
-        fab_restart.visibility = View.VISIBLE
-
-        // Animations to show all buttons
         // Help button
-        val showHelp = ValueAnimator.ofFloat(0f, 1f)
-        showHelp.addUpdateListener {
-            val value = showHelp.animatedValue as Float
+        help = ValueAnimator.ofFloat(fab_help.alpha, 1f)
+        help.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {
+                fab_help.visibility = View.VISIBLE
+            }
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {}
+        })
+        help.addUpdateListener {
+            val value = help.animatedValue as Float
             fab_help.alpha = value
         }
-        showHelp.duration = 300
-        showHelp.interpolator = AccelerateInterpolator()
+        help.duration = 300
+        help.interpolator = AccelerateInterpolator()
 
         // Stats button
-        val showStats = ValueAnimator.ofFloat(0f, 1f)
-        showStats.addUpdateListener {
-            val value = showStats.animatedValue as Float
+        stats = ValueAnimator.ofFloat(fab_stats.alpha, 1f)
+        stats.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {
+                fab_stats.visibility = View.VISIBLE
+            }
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {}
+        })
+        stats.addUpdateListener {
+            val value = stats.animatedValue as Float
             fab_stats.alpha = value
         }
-        showStats.duration = 300
-        showStats.interpolator = AccelerateInterpolator()
-        showStats.startDelay = 50
+        stats.duration = 300
+        stats.interpolator = AccelerateInterpolator()
+        stats.startDelay = 50
 
         // Restart button
-        val showRestart = ValueAnimator.ofFloat(0f, 1f)
-        showRestart.addUpdateListener {
-            val value = showRestart.animatedValue as Float
+        restart = ValueAnimator.ofFloat(fab_restart.alpha, 1f)
+        restart.addListener(object: Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator?) {
+                fab_restart.visibility = View.VISIBLE
+            }
+            override fun onAnimationCancel(p0: Animator?) {}
+            override fun onAnimationRepeat(p0: Animator?) {}
+            override fun onAnimationEnd(p0: Animator?) {}
+        })
+        restart.addUpdateListener {
+            val value = restart.animatedValue as Float
             fab_restart.alpha = value
         }
-        showRestart.duration = 300
-        showRestart.interpolator = AccelerateInterpolator()
-        showRestart.startDelay = 100
+        restart.duration = 300
+        restart.interpolator = AccelerateInterpolator()
+        restart.startDelay = 100
 
         // Play all animations together (with given delays)
         val animations = AnimatorSet()
-        animations.playTogether(showHelp, showStats, showRestart)
+        animations.playTogether(help, stats, restart)
         animations.start()
     }
 
-    private fun closeMenu() {
-        // Animations to hide all buttons
+    private fun menuClose() {
+        help.cancel()
+        stats.cancel()
+        restart.cancel()
+
         // Help button
-        val hideHelp = ValueAnimator.ofFloat(1f, 0f)
-        hideHelp.addListener(object: Animator.AnimatorListener {
+        help = ValueAnimator.ofFloat(fab_help.alpha, 0f)
+        help.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
             override fun onAnimationRepeat(p0: Animator?) {}
@@ -635,17 +659,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 fab_help.visibility = View.INVISIBLE
             }
         })
-        hideHelp.addUpdateListener {
-            val value = hideHelp.animatedValue as Float
+        help.addUpdateListener {
+            val value = help.animatedValue as Float
             fab_help.alpha = value
         }
-        hideHelp.duration = 300
-        hideHelp.interpolator = DecelerateInterpolator()
-        hideHelp.startDelay = 100
+        help.duration = 300
+        help.interpolator = DecelerateInterpolator()
+        help.startDelay = 100
 
         // Stats button
-        val hideStats = ValueAnimator.ofFloat(1f, 0f)
-        hideStats.addListener(object: Animator.AnimatorListener {
+        stats = ValueAnimator.ofFloat(fab_stats.alpha, 0f)
+        stats.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
             override fun onAnimationRepeat(p0: Animator?) {}
@@ -653,17 +677,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 fab_stats.visibility = View.INVISIBLE
             }
         })
-        hideStats.addUpdateListener {
-            val value = hideStats.animatedValue as Float
+        stats.addUpdateListener {
+            val value = stats.animatedValue as Float
             fab_stats.alpha = value
         }
-        hideStats.duration = 300
-        hideStats.interpolator = DecelerateInterpolator()
-        hideStats.startDelay = 50
+        stats.duration = 300
+        stats.interpolator = DecelerateInterpolator()
+        stats.startDelay = 50
 
         // Restart button
-        val hideRestart = ValueAnimator.ofFloat(1f, 0f)
-        hideRestart.addListener(object: Animator.AnimatorListener {
+        restart = ValueAnimator.ofFloat(fab_restart.alpha, 0f)
+        restart.addListener(object: Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator?) {}
             override fun onAnimationCancel(p0: Animator?) {}
             override fun onAnimationRepeat(p0: Animator?) {}
@@ -671,17 +695,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 fab_restart.visibility = View.INVISIBLE
             }
         })
-        hideRestart.addUpdateListener {
-            val value = hideRestart.animatedValue as Float
+        restart.addUpdateListener {
+            val value = restart.animatedValue as Float
             fab_restart.alpha = value
         }
-        hideRestart.duration = 300
-        hideRestart.interpolator = DecelerateInterpolator()
+        restart.duration = 300
+        restart.interpolator = DecelerateInterpolator()
 
         // Play all animations together (with given delays)
         val animations = AnimatorSet()
-        animations.playTogether(hideHelp, hideStats, hideRestart)
+        animations.playTogether(restart, stats, help)
         animations.start()
+    }
+
+    fun menuOpenClose(view: View) {
+        if (!opened)
+            menuOpen()
+        else
+            menuClose()
+
+        opened = !opened
     }
 
     fun showWords(view: View) {

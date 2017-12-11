@@ -53,7 +53,7 @@ class SongsParser {
             if (parser.eventType != XmlPullParser.START_TAG)
                 continue
 
-            // TODO: This is not really scalable
+            // This is not really scalable but I am not sure if there is a better way
             if (parser.name == "Song") {
                 val song = readSong(parser)
                 if (song.number > numberOfSongs)
