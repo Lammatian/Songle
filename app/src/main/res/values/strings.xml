@@ -24,6 +24,7 @@
     <string name="totalTime">Total time in game</string>
     <string name="averageScore">Average score per round</string>
     <string name="lastScore">Last game score</string>
+    <string name="diffNone">Difficulty</string>
     <string name="diffCakewalk">Cakewalk</string>
     <string name="diffEasy">Easy</string>
     <string name="diffMedium">Medium</string>
@@ -47,4 +48,9 @@
     <string name="givingUp">Way too hard</string>
     <string name="idea">Guess</string>
     <string name="treasureDesc">Treasure</string>
+    <string name="wannaPlay">Wanna play?</string>
+    <string name="startPlaying">Let\'s do it</string>
+    <string name="maxPoints">Max points: %1$d</string>
+    <string name="wordsOnMap">Words on the map: %1$d%%</string>
+    <string name="wordTypes">Word types: %1$d</string>
 </resources>

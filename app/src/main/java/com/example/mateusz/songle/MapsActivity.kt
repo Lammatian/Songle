@@ -108,7 +108,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             1 to Difficulty.VeryHard
     )
     private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
-//    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH)
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH)
     private var viewType: ViewType = ViewType.List
     private var numberOfWrongGuesses: Int = 0
@@ -178,7 +177,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Get the timestamp of the last known song file and the number of songs in it
-        timestamp = dateFormat.parse(sharedPreferences.getString("timestamp", "2017-12-08T12:50:20.327Z[Europe/London]"))
+        // If user has not timestamp saved, it would get an old one to prompt downloading songs
+        timestamp = dateFormat.parse(sharedPreferences.getString("timestamp", "Fri Dec 01 12:00:00 UTC 2017"))
 
         // Guess penalty reading and scoring test
         val inputStream = BufferedReader(InputStreamReader(assets.open("helpers/guesspen.txt")))
@@ -247,6 +247,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * installed Google Play services and returned to the app.
      */
     override fun onMapReady(googleMap: GoogleMap) {
+        //region Map initialization
         mMap = googleMap
 
         try {
@@ -256,11 +257,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         catch (e: Resources.NotFoundException) {
             println("Style not found exception thrown [onMapReady]")
         }
-
-        // Move camera to player location
-        val zoom = 16f
-        val edi = LatLng((MAX_LAT + MIN_LAT)/2.0, (MAX_LNG + MIN_LNG)/2.0)
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(edi, zoom))
 
         // Current position on the map
         try {
@@ -273,6 +269,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Add ”My location” button to the user interface
         mMap.uiSettings.isMyLocationButtonEnabled = true
+        //endregion
 
         //region Location services
         // Ask for location services if needed
@@ -302,10 +299,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         //endregion
 
-        // Get player location
+        //region Player location
+        // Set dummy location just in case no location information is provided
+        val edi = LatLng((MAX_LAT + MIN_LAT)/2.0, (MAX_LNG + MIN_LNG)/2.0)
+        val zoom = 16f
+        // Move camera to Edinburgh even if player position not found
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(edi, zoom))
         playerLocation = Location("")
         playerLocation.longitude = edi.longitude
         playerLocation.latitude = edi.latitude
+        // Listen for location changes
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         mFusedLocationClient.lastLocation.addOnSuccessListener {
             location ->
@@ -318,7 +321,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     treasure.isVisible = true
                 }
             }
+
+            locHandler.post(locRunnable)
         }
+        //endregion
 
         //region Marker click handling
         // Set listener for click on the button
@@ -384,11 +390,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val treasureLat = MIN_LAT + Math.random()*(MAX_LAT - MIN_LAT)
         val treasureLng = MIN_LNG + Math.random()*(MAX_LNG - MIN_LNG)
 
-        // Add treasure marker
+        // Add invisible at first treasure marker
         treasure = mMap.addMarker(MarkerOptions()
                 .position(LatLng(treasureLat, treasureLng))
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_treasure))
-                .visible(true))
+                .visible(false))
 
         // Save treasure location for easier management
         treasureLoc = Location("")
@@ -854,23 +860,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // If 15 seconds have passed, no longer can change difficulty
         val playAgain = mView.findViewById<Button>(R.id.btnGiveUp)
-        if (currentTime/1000 > 15) {
-            // Change text, its colour and background
-            playAgain.background = getDrawable(R.drawable.no_rectangle)
-            playAgain.setTextColor(resources.getColor(R.color.colorNo))
-            playAgain.text = getString(R.string.givingUp)
-            // Set appropriate padding in dp
-            val scale = resources.displayMetrics.density
-            val pad = (10*scale + 0.5).toInt()
-            playAgain.setPadding(pad, pad, pad, pad)
-            // Set onClick listener to show losing dialog
-            playAgain.setOnClickListener {
-                dialog.dismiss()
-                endGame(false)
+        val titleText = mView.findViewById<TextView>(R.id.giveUpText)
+        // If the game is not started, enable starting a game
+        when {
+            currentTime == 0L -> {
+                titleText.text = getString(R.string.wannaPlay)
+                playAgain.text = getString(R.string.startPlaying)
+                val scale = resources.displayMetrics.density
+                val pad = (10*scale + 0.5).toInt()
+                playAgain.setPadding(pad, pad, pad, pad)
+                // Set onClick listener to enable playing
+                playAgain.setOnClickListener {
+                    dialog.dismiss()
+                    showDifficulty()
+                }
             }
-        }
-        else {
-            playAgain.setOnClickListener {
+            currentTime/1000 > 15 -> {
+                // Change text, its colour and background
+                playAgain.background = getDrawable(R.drawable.no_rectangle)
+                playAgain.setTextColor(resources.getColor(R.color.colorNo))
+                playAgain.text = getString(R.string.givingUp)
+                // Set appropriate padding in dp
+                val scale = resources.displayMetrics.density
+                val pad = (10*scale + 0.5).toInt()
+                playAgain.setPadding(pad, pad, pad, pad)
+                // Set onClick listener to show losing dialog
+                playAgain.setOnClickListener {
+                    dialog.dismiss()
+                    endGame(false)
+                }
+            }
+            else -> playAgain.setOnClickListener {
                 dialog.dismiss()
                 clearMap()
                 showDifficulty()
@@ -882,7 +902,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Show the dialog
         dialog.show()
-        dialog.window.setLayout(600, 380)
+        dialog.window.setLayout(700, 380)
     }
 
     fun showGuessWindow(view: View) {
@@ -905,7 +925,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val makeGuessButton = mView.findViewById<ImageButton>(R.id.makeGuess)
         val guessText = mView.findViewById<EditText>(R.id.guessText)
-        // TODO: This is hacky, I don't really like it
+        // This is hacky, I don't really like it
         makeGuessButton.setOnClickListener({
             v ->
             if (makeGuess(v, guessText.text.toString())) {
@@ -930,6 +950,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun showDifficulty() {
+        val diffToStats = hashMapOf(
+                Difficulty.Cakewalk to arrayOf(400, 100, 4, R.string.diffCakewalk),
+                Difficulty.Easy to arrayOf(500, 100, 3, R.string.diffEasy),
+                Difficulty.Medium to arrayOf(700, 75, 3, R.string.diffMedium),
+                Difficulty.Hard to arrayOf(900, 50, 2, R.string.diffHard),
+                Difficulty.VeryHard to arrayOf(1000, 25, 1, R.string.diffVeryhard)
+        )
         val mBuilder = AlertDialog.Builder(this@MapsActivity, R.style.CustomAlertDialog)
         val mView = layoutInflater.inflate(R.layout.dialog_difficulty, null)
 
@@ -937,17 +964,56 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val dialog = mBuilder.create()
 
         // Get all difficulty buttons
-        val cakewalk = mView.findViewById<Button>(R.id.btnCakewalk)
-        val easy = mView.findViewById<Button>(R.id.btnEasy)
-        val medium = mView.findViewById<Button>(R.id.btnMedium)
-        val hard = mView.findViewById<Button>(R.id.btnHard)
-        val vhard = mView.findViewById<Button>(R.id.btnVHard)
+        val cakewalk = mView.findViewById<Button>(R.id.diffCakewalk)
+        val easy = mView.findViewById<Button>(R.id.diffEasy)
+        val medium = mView.findViewById<Button>(R.id.diffMedium)
+        val hard = mView.findViewById<Button>(R.id.diffHard)
+        val vhard = mView.findViewById<Button>(R.id.diffVeryHard)
         val diffs = arrayOf(cakewalk, easy, medium, hard, vhard)
+
+        // Set text as for difficulty medium
+        val difficultyText = mView.findViewById<TextView>(R.id.difficultyName)
+        difficultyText.text = getString(R.string.diffMedium)
+        val maxPoints = mView.findViewById<TextView>(R.id.maxPointsText)
+        maxPoints.text = getString(R.string.maxPoints, 700)
+        val wordsOnMap = mView.findViewById<TextView>(R.id.wordsOnMapText)
+        wordsOnMap.text = getString(R.string.wordsOnMap, 75)
+        val wordTypes = mView.findViewById<TextView>(R.id.wordTypesText)
+        wordTypes.text = getString(R.string.wordTypes, 3)
 
         // On click listener for all buttons
         val ocl = View.OnClickListener {
-            dialog.dismiss()
-            chooseDifficulty(it)
+            val chosen = when (it.id) {
+                R.id.diffCakewalk -> Difficulty.Cakewalk
+                R.id.diffEasy     -> Difficulty.Easy
+                R.id.diffMedium   -> Difficulty.Medium
+                R.id.diffHard     -> Difficulty.Hard
+                R.id.diffVeryHard -> Difficulty.VeryHard
+                else              -> Difficulty.Medium
+            }
+
+            // If button was already chosen, start game
+            if ((it as Button).text == "Let's do it") {
+                difficulty = chosen
+                dialog.dismiss()
+                startGame()
+            }
+            // Otherwise, change the button's text to Let's do it
+            else {
+                // Reset all texts
+                cakewalk.text = getString(R.string.diffCakewalk)
+                easy.text = getString(R.string.diffEasy)
+                medium.text = getString(R.string.diffMedium)
+                hard.text = getString(R.string.diffHard)
+                vhard.text = getString(R.string.diffVeryhard)
+
+                // Change text of currently chosen button and information about difficulty
+                it.text = getString(R.string.startPlaying)
+                difficultyText.text = getString(diffToStats[chosen]!![3])
+                maxPoints.text = getString(R.string.maxPoints, diffToStats[chosen]!![0])
+                wordsOnMap.text = getString(R.string.wordsOnMap, diffToStats[chosen]!![1])
+                wordTypes.text = getString(R.string.wordTypes, diffToStats[chosen]!![2])
+            }
         }
 
         // Set the onClick for all buttons
@@ -997,7 +1063,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             dialog.dismiss()
         }
         // If stop playing, set timer to 0 and close the window
-        // TODO: Enable playing again after closing window?
         val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
         stop.setOnClickListener {
             startTime = SystemClock.uptimeMillis()
@@ -1045,6 +1110,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Show the dialog
         dialog.show()
+    }
+    //endregion
+
+    //region Location
+    val locHandler = Handler()
+    /**
+     * Get location and check if treasure should appear every 3 seconds
+     */
+    private var locRunnable = object : Runnable {
+        override fun run() {
+            try {
+                mFusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        playerLocation = location
+                        if (treasureLineNumber > 0 && playerLocation.distanceTo(treasureLoc) < 100) {
+                            treasure.isVisible = true
+                        }
+                    }
+                }
+            } catch (e: SecurityException) {
+
+            }
+
+            // Get location again in 5 seconds
+            locHandler.postDelayed(this, 3000)
+        }
     }
     //endregion
 

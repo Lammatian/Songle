@@ -1,81 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.widget.LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<GridLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:layout_height="wrap_content"
     android:id="@+id/mainDiffView"
-    android:gravity="center_horizontal">
+    android:columnCount="2">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/chooseDiff"
-        android:textSize="30sp"
-        android:layout_margin="10dp"
-        android:gravity="center_horizontal"/>
+    <LinearLayout
+        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_columnWeight="1"
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical"
+        android:layout_margin="5dp">
 
-    <!--TODO: Change to scrollable list-->
-    <Button
-        android:id="@+id/btnCakewalk"
-        android:layout_width="70dp"
-        android:alpha="0.3"
-        android:textSize="5sp"
-        android:textColor="@color/colorPrimary"
-        android:layout_height="25dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_above="@id/btnEasy"
-        android:layout_marginBottom="-3dp"
-        android:text="@string/diffCakewalk"/>
+        <Button
+            android:id="@+id/diffCakewalk"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="3dp"
+            android:background="@drawable/rectangle"
+            android:text="@string/diffCakewalk"
+            android:textColor="@color/colorPrimary"/>
 
-    <Button
-        android:id="@+id/btnEasy"
-        android:layout_width="120dp"
-        android:alpha="0.7"
-        android:textSize="13sp"
-        android:textColor="@color/colorPrimaryDark"
-        android:layout_height="35dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_above="@+id/btnMedium"
-        android:layout_marginBottom="-3dp"
-        android:text="@string/diffEasy"/>
+        <Button
+            android:id="@+id/diffEasy"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="3dp"
+            android:background="@drawable/rectangle"
+            android:text="@string/diffEasy"
+            android:textColor="@color/colorPrimaryDark"/>
 
-    <Button
-        android:id="@+id/btnMedium"
-        android:layout_width="150dp"
-        android:alpha="1"
-        android:textSize="17sp"
-        android:textColor="@color/colorAccent"
-        android:layout_height="45dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:text="@string/diffMedium"/>
+        <Button
+            android:id="@+id/diffMedium"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="3dp"
+            android:background="@drawable/rectangle"
+            android:text="@string/diffMedium"
+            android:textColor="@color/colorAccent"/>
 
-    <Button
-        android:id="@+id/btnHard"
-        android:layout_width="120dp"
-        android:alpha="0.7"
-        android:textSize="13sp"
-        android:textColor="#ff0000"
-        android:layout_height="35dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_below="@id/btnMedium"
-        android:layout_marginTop="-3dp"
-        android:text="@string/diffHard"/>
+        <Button
+            android:id="@+id/diffHard"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="3dp"
+            android:background="@drawable/rectangle"
+            android:text="@string/diffHard"
+            android:textColor="#dd0000"/>
 
-    <Button
-        android:id="@+id/btnVHard"
-        android:layout_width="70dp"
-        android:alpha="0.3"
-        android:textSize="5sp"
-        android:textColor="#aa0000"
-        android:layout_height="25dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_below="@id/btnHard"
-        android:layout_marginTop="-3dp"
-        android:text="@string/diffVeryhard"/>
+        <Button
+            android:id="@+id/diffVeryHard"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="3dp"
+            android:background="@drawable/rectangle"
+            android:text="@string/diffVeryhard"
+            android:textColor="#aa0000"/>
 
-</android.widget.LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_columnWeight="2.5"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp">
+
+        <TextView
+            android:id="@+id/difficultyName"
+            android:text="@string/diffNone"
+            android:textColor="@color/colorAccent"
+            android:textSize="35sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"/>
+
+        <TextView
+            android:id="@+id/maxPointsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:textSize="15sp"
+            android:text="@string/maxPoints"/>
+
+        <TextView
+            android:id="@+id/wordsOnMapText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:textSize="15sp"
+            android:text="@string/wordsOnMap"/>
+
+        <TextView
+            android:id="@+id/wordTypesText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:textSize="15sp"
+            android:text="@string/wordTypes"/>
+
+    </LinearLayout>
+
+</GridLayout>

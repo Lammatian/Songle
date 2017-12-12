@@ -1,51 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<GridLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/mainTreasureView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:layout_height="100dp"
+    android:columnCount="3">
 
     <ImageView
         android:id="@+id/treasure1"
-        android:layout_width="100dp"
+        android:layout_width="0dp"
         android:layout_height="100dp"
-        android:layout_marginEnd="-20dp"
-        android:layout_marginStart="-10dp"
+        android:layout_column="0"
+        android:layout_columnWeight="1"
         android:contentDescription="@string/treasureDesc"
+        android:foregroundGravity="center"
         android:src="@mipmap/ic_treasure" />
 
-    <TextView
-        android:id="@+id/line"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/colorAccent"
-        android:textSize="18sp"
-        android:layout_toEndOf="@id/treasure1"
-        android:layout_toStartOf="@id/treasure2"
-        android:layout_alignTop="@id/treasure1"
-        android:layout_centerVertical="true"
-        android:layout_marginTop="10dp"
-        android:gravity="center"/>
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_column="1"
+        android:layout_columnWeight="3"
+        android:gravity="center"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorAccent"
+            android:gravity="center"
+            android:textSize="18sp"/>
+
+        <TextView
+            android:id="@+id/lineNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"/>
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/treasure2"
-        android:layout_width="100dp"
+        android:layout_width="0dp"
         android:layout_height="100dp"
-        android:layout_marginStart="-20dp"
-        android:layout_marginEnd="-10dp"
+        android:layout_column="2"
+        android:layout_columnWeight="1"
         android:contentDescription="@string/treasureDesc"
-        android:src="@mipmap/ic_treasure"
-        android:layout_alignParentEnd="true"/>
-
-    <TextView
-        android:id="@+id/lineNumber"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/line"
-        android:layout_toEndOf="@id/treasure1"
-        android:layout_toStartOf="@id/treasure2"
-        android:layout_marginTop="5dp"
-        android:gravity="center"/>
-
-</RelativeLayout>
+        android:src="@mipmap/ic_treasure"/>
+</GridLayout>
