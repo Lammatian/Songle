@@ -8,6 +8,7 @@
 
     <EditText
         android:id="@+id/guessText"
+        android:hint="@string/songTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@+id/makeGuess"
@@ -21,6 +22,7 @@
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_margin="10dp"
+        android:contentDescription="@string/idea"
         android:src="@drawable/ic_guess_48px"
         android:background="@drawable/circle"/>
 

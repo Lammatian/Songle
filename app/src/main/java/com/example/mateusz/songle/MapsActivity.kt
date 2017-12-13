@@ -31,10 +31,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
-import com.example.mateusz.songle.songdb.Lyrics
-import com.example.mateusz.songle.songdb.Song
-import com.example.mateusz.songle.songdb.SongDatabase
-import com.example.mateusz.songle.songdb.SongMap
+import com.example.mateusz.songle.songdb.*
+import com.example.mateusz.songle.tabdialog.TabbedDialog
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
@@ -66,6 +64,13 @@ enum class Difficulty {
     VeryHard
 }
 
+// Past games data
+data class PastGameInfo(val date: String,
+                        val song: String,
+                        val gametime: String,
+                        val points: Int,
+                        val guesses: Int)
+
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
@@ -82,6 +87,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var currentSong: Song
     private lateinit var difficulty: Difficulty
     private lateinit var songDB: SongDatabase
+    private lateinit var pastGames: ArrayList<PastGameInfo>
+    private var numberOfPastGames: Int = 0
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
     private lateinit var timestamp: Date
@@ -141,7 +148,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     class Dcl : DownloadCompleteListener {
         override fun onDownloadComplete(result: String) {
-            print(result)
         }
     }
 
@@ -174,6 +180,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         for (stat in lifelongStatistics.keys) {
             if (sharedPreferences.getLong(stat, -1L) != -1L)
                 lifelongStatistics[stat] = sharedPreferences.getLong(stat, 0L)
+        }
+
+        // Past game information retrieval
+        pastGames = ArrayList()
+        numberOfPastGames = sharedPreferences.getInt("Past games", 0)
+
+        for (i in 1..numberOfPastGames) {
+            val gameInfo = sharedPreferences.getString("Game" + i, "").split(",")
+            val game = PastGameInfo(gameInfo[0],
+                    gameInfo[1],
+                    gameInfo[2],
+                    gameInfo[3].toInt(),
+                    gameInfo[4].toInt())
+            pastGames.add(game)
         }
 
         // Get the timestamp of the last known song file and the number of songs in it
@@ -409,12 +429,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     private fun chooseDifficulty(view: View) {
         difficulty = when (view.id) {
-            R.id.btnCakewalk -> Difficulty.Cakewalk
-            R.id.btnEasy     -> Difficulty.Easy
-            R.id.btnMedium   -> Difficulty.Medium
-            R.id.btnHard     -> Difficulty.Hard
-            R.id.btnVHard    -> Difficulty.VeryHard
-            else             -> Difficulty.Medium
+            R.id.diffCakewalk -> Difficulty.Cakewalk
+            R.id.diffEasy     -> Difficulty.Easy
+            R.id.diffMedium   -> Difficulty.Medium
+            R.id.diffHard     -> Difficulty.Hard
+            R.id.diffVeryHard -> Difficulty.VeryHard
+            else              -> Difficulty.Medium
         }
 
         startGame()
@@ -477,6 +497,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * Logic after ending a game
      */
     private fun endGame(win: Boolean) {
+        val editor = sharedPreferences.edit()
+
         // Calculate the score
         val gameScore =
                 if (win) score((currentTime/1000).toInt(),
@@ -487,6 +509,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 else
                     0
 
+        //region Lifelong statistics update
         // Update best score if necessary
         lifelongStatistics["Best score"] = Math.max(gameScore.toLong(), lifelongStatistics["Best score"]!!)
 
@@ -504,9 +527,48 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Update last game score
         lifelongStatistics["Last game score"] = gameScore.toLong()
+        //endregion
+
+        //region Past games update
+        // Update number of past games
+        numberOfPastGames = Math.min(numberOfPastGames+1, 50)
+
+        // Get current date for the game
+        val parser = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ENGLISH)
+        val timeNow = Date()
+        val gameEndTime = parser.format(timeNow)
+
+        // Move all games down one position in shared preferences
+        var toMove = ""
+        for (i in 1..numberOfPastGames) {
+            val temp = toMove
+            toMove = sharedPreferences.getString("Game" + i, "")
+            editor.putString("Game" + i, temp)
+        }
+
+        // Add new game on the top of the list of past games
+        val lastGame = arrayOf(gameEndTime,
+                currentSong.title + " - " + currentSong.artist,
+                getFormattedTime(currentTime),
+                gameScore,
+                numberOfWrongGuesses + 1
+                ).joinToString(",")
+
+        // Put last game on top of the list of games
+        editor.putString("Game1", lastGame)
+
+        // Update number of games
+        editor.putInt("Past games", numberOfPastGames)
+
+        // Update past games for the user to show
+        pastGames.add(0, PastGameInfo(gameEndTime,
+                currentSong.title + " - " + currentSong.artist,
+                getFormattedTime(currentTime),
+                gameScore,
+                numberOfWrongGuesses + 1))
+        //endregion
 
         // Update shared preferences
-        val editor = sharedPreferences.edit()
         for ((statistic, value) in lifelongStatistics) {
             editor.putLong(statistic, value)
         }
@@ -821,7 +883,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     //region Dialogs
     fun showStats(view: View) {
-        val text = hashMapOf(
+        val lifelong = hashMapOf(
                 R.id.statBestScore to lifelongStatistics["Best score"]!!.toString(),
                 R.id.statGamesPlayed to lifelongStatistics["Games played"]!!.toString(),
                 R.id.statGamesWon to lifelongStatistics["Games won"]!!.toString(),
@@ -829,8 +891,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 R.id.statAverageScore to lifelongStatistics["Average score"]!!.toString(),
                 R.id.statLastGameScore to lifelongStatistics["Last game score"]!!.toString()
         )
+        val past = ArrayList<PastGameInfo>()
+        past.add(PastGameInfo("date", "song", "gametime", 1, 1))
 
-        showDialog(R.layout.dialog_statistics, R.id.mainStatView, texts = text)
+        val ft = supportFragmentManager.beginTransaction()
+        val prev = supportFragmentManager.findFragmentByTag("dialog")
+        if (prev != null)
+            ft.remove(prev)
+        ft.addToBackStack(null)
+
+        val t = TabbedDialog()
+        t.set(lifelong, pastGames)
+        t.setStyle(-1, R.style.CustomAlertDialog)
+        t.show(ft, "dialog")
     }
 
     fun showHelp(view: View) {
@@ -913,16 +986,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mBuilder.setView(mView)
         val dialog = mBuilder.create()
 
-        // If title is not empty, set it
-        if (title != "") {
-            val viewTitle = TextView(dialog.context)
-            viewTitle.typeface = tf
-            viewTitle.text = title
-            viewTitle.textSize = 24f
-            viewTitle.gravity = Gravity.CENTER_HORIZONTAL
-            dialog.setCustomTitle(viewTitle)
-        }
-
         val makeGuessButton = mView.findViewById<ImageButton>(R.id.makeGuess)
         val guessText = mView.findViewById<EditText>(R.id.guessText)
         // This is hacky, I don't really like it
@@ -993,10 +1056,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
             // If button was already chosen, start game
-            if ((it as Button).text == "Let's do it") {
-                difficulty = chosen
+            if ((it as Button).text == getString(R.string.startPlaying)) {
                 dialog.dismiss()
-                startGame()
+                chooseDifficulty(it)
             }
             // Otherwise, change the button's text to Let's do it
             else {
@@ -1226,10 +1288,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         return 2.0*(p1.intersect(p2).size) / (p1.size + p2.size)
-    }
-
-    fun toMain(view: View) {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
     }
 }

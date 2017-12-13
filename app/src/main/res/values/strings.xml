@@ -53,4 +53,5 @@
     <string name="maxPoints">Max points: %1$d</string>
     <string name="wordsOnMap">Words on the map: %1$d%%</string>
     <string name="wordTypes">Word types: %1$d</string>
+    <string name="songTitle">Enter song title</string>
 </resources>

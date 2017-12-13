@@ -123,18 +123,4 @@ class SongsParser {
             }
         }
     }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun nextSong(parser: XmlPullParser) {
-        if (parser.eventType != XmlPullParser.START_TAG)
-            throw IllegalStateException()
-
-        var depth = 1
-        while (depth != 0) {
-            when (parser.next()) {
-                XmlPullParser.END_TAG -> depth--
-                XmlPullParser.START_TAG -> depth++
-            }
-        }
-    }
 }

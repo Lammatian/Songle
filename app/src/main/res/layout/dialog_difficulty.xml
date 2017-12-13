@@ -6,6 +6,7 @@
     android:id="@+id/mainDiffView"
     android:columnCount="2">
 
+    <!--region Buttons-->
     <LinearLayout
         android:layout_height="match_parent"
         android:layout_width="0dp"
@@ -19,7 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_margin="3dp"
-            android:background="@drawable/rectangle"
+            android:background="@drawable/cakewalk_rectangle"
             android:text="@string/diffCakewalk"
             android:textColor="@color/colorPrimary"/>
 
@@ -28,7 +29,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_margin="3dp"
-            android:background="@drawable/rectangle"
+            android:background="@drawable/easy_rectangle"
             android:text="@string/diffEasy"
             android:textColor="@color/colorPrimaryDark"/>
 
@@ -37,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_margin="3dp"
-            android:background="@drawable/rectangle"
+            android:background="@drawable/medium_rectangle"
             android:text="@string/diffMedium"
             android:textColor="@color/colorAccent"/>
 
@@ -46,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_margin="3dp"
-            android:background="@drawable/rectangle"
+            android:background="@drawable/hard_rectangle"
             android:text="@string/diffHard"
             android:textColor="#dd0000"/>
 
@@ -55,12 +56,14 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_margin="3dp"
-            android:background="@drawable/rectangle"
+            android:background="@drawable/veryhard_rectangle"
             android:text="@string/diffVeryhard"
             android:textColor="#aa0000"/>
 
     </LinearLayout>
+    <!--endregion-->
 
+    <!--region Description-->
     <LinearLayout
         android:layout_height="match_parent"
         android:layout_width="0dp"
@@ -110,5 +113,6 @@
             android:text="@string/wordTypes"/>
 
     </LinearLayout>
+    <!--endregion-->
 
 </GridLayout>

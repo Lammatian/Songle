@@ -10,4 +10,6 @@
     <color name="colorMainFAB">#FF9800</color>
     <color name="colorSubFAB">#FFC107</color>
     <color name="colorNo">#BF0000</color>
+    <color name="colorWinHighlight">#334CAF50</color>
+    <color name="colorLoseHighlight">#33BF0000</color>
 </resources>
