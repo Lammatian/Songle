@@ -1,15 +1,7 @@
 <resources>
     <string name="app_name">Songle</string>
-    <string name="title_activity_maps">Map</string>
     <string name="statistics">Statistics</string>
     <string name="title">Songle</string>
-    <string name="help">&#8226; Walk up to <font color='#FFC107'>markers</font> <br />
-&#8226; Collect <font color='#FFC107'>words</font> <br />
-&#8226; Guess the <font color='#FFC107'>song</font> <br />
-&#8226; Be <font color='#FFC107'>quick</font> and <font color='#FFC107'>picky</font> <br />
-&#8226; Get the best <font color='#FFC107'>score</font> <br />
-&#8226; If stuck, <font color='#FFC107'>restart</font> <br />
-&#8226; Try to find the <font color='#ff0000'>treasure</font> :)</string>
     <string name="listView">List</string>
     <string name="countView">Count</string>
     <string name="newWord">You found a new word!</string>
@@ -30,7 +22,6 @@
     <string name="diffMedium">Medium</string>
     <string name="diffHard">Hard</string>
     <string name="diffVeryhard">Very hard</string>
-    <string name="chooseDiff">Choose Difficulty</string>
     <string name="timer">mm:ss</string>
     <string name="minuteTime">%1$s:%2$s</string>
     <string name="hourTime">%1$s:%2$s:%3$s</string>
@@ -55,7 +46,6 @@
     <string name="wordsOnMap">Words on the map: %1$d%%</string>
     <string name="wordTypes">Word types: %1$d</string>
     <string name="songTitle">Enter song title</string>
-    <string name="title_activity_loading">LoadingActivity</string>
     <!--region Downloading-->
     <string name="lyricsStart">Lyrics download start: %1$d</string>
     <string name="lyricsEnd">Lyrics download complete: %1$d</string>

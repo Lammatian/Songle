@@ -34,7 +34,6 @@ class DownloadNewSongsTask(private val caller: LyricsDownloadCompleteListener,
         return parser.parse(stream, numberOfSongs)
     }
 
-    // TODO: Move somewhere more general for less code repetition
     @Throws(IOException::class)
     private fun downloadUrl(urlString: String): InputStream {
         val url = URL(urlString)
@@ -50,7 +49,6 @@ class DownloadNewSongsTask(private val caller: LyricsDownloadCompleteListener,
         return conn.inputStream
     }
 
-    // TODO: Is that at all necessary? Use dcl better
     override fun onPostExecute(result: List<Song>?) {
         super.onPostExecute(result)
         caller.onDownloadComplete(result.toString())

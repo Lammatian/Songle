@@ -38,9 +38,6 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -86,7 +83,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var numberOfPastGames: Int = 0
     private var markerToPoint: HashMap<Marker, MapPoint> = HashMap()
     private lateinit var tf: Typeface
-    private lateinit var timestamp: Date
     private var numberOfSongs: Int = 0
     private var lifelongStatistics: HashMap<String, Long> = hashMapOf(
             "Best score" to 0L,
@@ -102,18 +98,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             "notboring" to R.mipmap.ylw_circle,
             "interesting" to R.mipmap.orange_diamond,
             "veryinteresting" to R.mipmap.red_stars)
-    private val numberToDifficulty: HashMap<Int, Difficulty> = hashMapOf(
-            5 to Difficulty.Cakewalk,
-            4 to Difficulty.Easy,
-            3 to Difficulty.Medium,
-            2 to Difficulty.Hard,
-            1 to Difficulty.VeryHard
-    )
-    private val baseUrl: String = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data"
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH)
     private var viewType: ViewType = ViewType.List
     private var numberOfWrongGuesses: Int = 0
-    private lateinit var newSongs: List<Song>
     private lateinit var songs: List<Song>
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var playerLocation: Location
@@ -558,7 +544,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             return true
         }
         // If user guessed incorrectly, change button to red for 2 seconds
-        // TODO: Shake the button a bit as well
         else {
             val button = view.findViewById<ImageButton>(R.id.makeGuess)
             button.background = resources.getDrawable(R.drawable.no_circle)

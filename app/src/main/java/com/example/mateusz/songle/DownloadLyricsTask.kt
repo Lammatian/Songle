@@ -43,7 +43,6 @@ class DownloadLyricsTask(private val caller: LyricsDownloadCompleteListener,
         return stream.bufferedReader().use{it.readText()}
     }
 
-    // TODO: Move to more general place for no code repetition
     @Throws(IOException::class)
     private fun downloadUrl(urlString: String): InputStream {
         val url = URL(urlString)

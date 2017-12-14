@@ -20,7 +20,7 @@ enum class WordValue {
 
 data class Word(val word: String, val interest: WordValue)
 
-class WordsFound(private val lyrics: List<List<String>>,
+class WordsFound(lyrics: List<List<String>>,
                  private val wordsInGame: HashMap<ArrayList<Int>, Word>) {
 
     private var wordsList: ArrayList<ArrayList<String>> = ArrayList(lyrics.size)
