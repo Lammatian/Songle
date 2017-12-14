@@ -293,7 +293,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 markerLoc.longitude = marker.position.longitude
 
                 // Check if player can pick up the word from current distance
-                if (playerLocation.distanceTo(markerLoc) > 1000)
+                if (playerLocation.distanceTo(markerLoc) > 15)
                     return true
 
                 // Sort out treasure separately
