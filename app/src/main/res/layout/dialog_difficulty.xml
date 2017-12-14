@@ -22,6 +22,8 @@
             android:layout_margin="3dp"
             android:background="@drawable/cakewalk_rectangle"
             android:text="@string/diffCakewalk"
+            android:gravity="center"
+            android:layout_gravity="center"
             android:textColor="@color/colorPrimary"/>
 
         <Button
@@ -31,6 +33,8 @@
             android:layout_margin="3dp"
             android:background="@drawable/easy_rectangle"
             android:text="@string/diffEasy"
+            android:gravity="center"
+            android:layout_gravity="center"
             android:textColor="@color/colorPrimaryDark"/>
 
         <Button
@@ -40,6 +44,8 @@
             android:layout_margin="3dp"
             android:background="@drawable/medium_rectangle"
             android:text="@string/diffMedium"
+            android:gravity="center"
+            android:layout_gravity="center"
             android:textColor="@color/colorAccent"/>
 
         <Button
@@ -49,6 +55,8 @@
             android:layout_margin="3dp"
             android:background="@drawable/hard_rectangle"
             android:text="@string/diffHard"
+            android:gravity="center"
+            android:layout_gravity="center"
             android:textColor="#dd0000"/>
 
         <Button
@@ -58,7 +66,10 @@
             android:layout_margin="3dp"
             android:background="@drawable/veryhard_rectangle"
             android:text="@string/diffVeryhard"
+            android:gravity="center"
+            android:layout_gravity="center"
             android:textColor="#aa0000"/>
+
 
     </LinearLayout>
     <!--endregion-->

@@ -27,10 +27,7 @@ import android.text.Html
 import android.view.*
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.TextView
+import android.widget.*
 import com.example.mateusz.songle.songdb.*
 import com.example.mateusz.songle.tabdialog.TabbedDialog
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -41,13 +38,11 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-
-/**
- * ic_treasure taken from https://openclipart.org/detail/257257/chromatic-musical-notes-typography-no-background
- * ic_idea taken from https://thenounproject.com/term/idea/62335/, work of Takao Umehara
- */
 
 // Map boundaries
 private const val MIN_LAT = 55.942617
@@ -146,7 +141,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var networkReceiver = NetworkReceiver()
 
-    class Dcl : DownloadCompleteListener {
+    class Dcl : LyricsDownloadCompleteListener {
         override fun onDownloadComplete(result: String) {
         }
     }
@@ -187,18 +182,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         numberOfPastGames = sharedPreferences.getInt("Past games", 0)
 
         for (i in 1..numberOfPastGames) {
-            val gameInfo = sharedPreferences.getString("Game" + i, "").split(",")
-            val game = PastGameInfo(gameInfo[0],
-                    gameInfo[1],
-                    gameInfo[2],
-                    gameInfo[3].toInt(),
-                    gameInfo[4].toInt())
+            val gameDate = sharedPreferences.getString("Game" + i + "_Date", "")
+            val gameTitle = sharedPreferences.getString("Game" + i + "_Title", "")
+            val gameTime = sharedPreferences.getString("Game" + i + "_Time", "")
+            val gamePoints = sharedPreferences.getString("Game" + i + "_Score", "").toInt()
+            val gameGuesses = sharedPreferences.getString("Game" + i + "_Guesses", "").toInt()
+            val game = PastGameInfo(gameDate,
+                    gameTitle,
+                    gameTime,
+                    gamePoints,
+                    gameGuesses)
             pastGames.add(game)
         }
-
-        // Get the timestamp of the last known song file and the number of songs in it
-        // If user has not timestamp saved, it would get an old one to prompt downloading songs
-        timestamp = dateFormat.parse(sharedPreferences.getString("timestamp", "Fri Dec 01 12:00:00 UTC 2017"))
 
         // Guess penalty reading and scoring test
         val inputStream = BufferedReader(InputStreamReader(assets.open("helpers/guesspen.txt")))
@@ -206,50 +201,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         readGuessPen = readGuessPen.substring(1, readGuessPen.length-1)
         guessPenalty = readGuessPen.split(",").map{it.toDouble()}
 
-        // Connect to database and get information about songs
-        // TODO: When loading, show some information
+        // Finally, get all songs from the database
         songDB = Room.databaseBuilder(applicationContext, SongDatabase::class.java, "Songs")
                 .allowMainThreadQueries().fallbackToDestructiveMigration().build()
-        numberOfSongs = songDB.songDao().getNumberOfSongs()
-
-        // Check for new songs
-        val songUrl = baseUrl + "/songs/songs.xml"
-        val serverTimestampTask = GetTimestampTask(Dcl()).execute(songUrl)
-        val serverTimestamp = serverTimestampTask.get() as Date
-
-        if (serverTimestamp != timestamp) {
-            val parsedSongs = DownloadNewSongsTask(Dcl(), songUrl, numberOfSongs).execute()
-            newSongs = parsedSongs.get() as List<Song>
-
-            // Add new songs, lyrics and map points to the database
-            for (i in 0 until newSongs.size) {
-                songDB.songDao().insertSong(newSongs[i])
-
-                val newSongNum = numberOfSongs + 1 + i
-
-                // Download lyrics to new songs
-                val lyricsUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/lyrics.txt"
-                val parsedLyrics = DownloadLyricsTask(Dcl()).execute(lyricsUrl)
-                val lyrics = parsedLyrics.get()!!
-                songDB.songDao().insertLyrics(Lyrics(newSongNum, lyrics))
-
-                // Download all maps to new songs
-                for (j in 1..5) {
-                    val mapUrl = baseUrl + "/songs/" + String.format("%02d", newSongNum) + "/map" + j.toString() + ".kml"
-                    val parsedMap = DownloadMapTask(Dcl()).execute(mapUrl)
-                    val map = parsedMap.get()!!
-                    songDB.songDao().insertMap(SongMap(newSongNum, numberToDifficulty[j]!!, map))
-                }
-            }
-        }
-
-        // Finally, get all songs from the database
         songs = songDB.songDao().getAllSongs()
-
-        // Update timestamp
-        val editor = sharedPreferences.edit()
-        editor.putString("timestamp", serverTimestamp.toString())
-        editor.apply()
 
         // Update number of songs
         numberOfSongs = songs.size
@@ -277,22 +232,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         catch (e: Resources.NotFoundException) {
             println("Style not found exception thrown [onMapReady]")
         }
-
-        // Current position on the map
-        try {
-            // Visualise current position with a small blue circle
-            mMap.isMyLocationEnabled = true
-        }
-        catch (se : SecurityException) {
-            println("Security exception thrown [onMapReady]")
-        }
-
-        // Add ”My location” button to the user interface
-        mMap.uiSettings.isMyLocationButtonEnabled = true
         //endregion
 
         //region Location services
-        // Ask for location services if needed
+        // Ask for location services if needed and wait for response
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
@@ -317,8 +260,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         99)
             }
         }
+        // If location permissions given, set up the map
+        else
+            setupMap()
         //endregion
+    }
 
+    /**
+     * Set map up once location permissions are given
+     */
+    private fun setupMap() {
         //region Player location
         // Set dummy location just in case no location information is provided
         val edi = LatLng((MAX_LAT + MIN_LAT)/2.0, (MAX_LNG + MIN_LNG)/2.0)
@@ -330,20 +281,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         playerLocation.latitude = edi.latitude
         // Listen for location changes
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        mFusedLocationClient.lastLocation.addOnSuccessListener {
-            location ->
-            if (location != null) {
-                playerLocation = location
-                val playerLatLng = LatLng(playerLocation.latitude, playerLocation.longitude)
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(playerLatLng, zoom))
+        locHandler.post(locRunnable)
+        //endregion
 
-                if (treasureLineNumber > 0 && playerLocation.distanceTo(treasureLoc) < 100) {
-                    treasure.isVisible = true
-                }
-            }
-
-            locHandler.post(locRunnable)
+        //region Map position
+        try {
+            // Visualise current position with a small blue circle
+            mMap.isMyLocationEnabled = true
         }
+        catch (se : SecurityException) {
+            println("Security exception thrown [onMapReady]")
+        }
+
+        // Add ”My location” button to the user interface
+        mMap.uiSettings.isMyLocationButtonEnabled = true
         //endregion
 
         //region Marker click handling
@@ -391,6 +342,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //region Choose difficulty
         showDifficulty()
         //endregion
+    }
+
+    /**
+     * Wait for location permissions
+     */
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == 99) {
+            if (permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                    setupMap()
+                else
+                    ActivityCompat.requestPermissions(this,
+                            Array(1){Manifest.permission.ACCESS_FINE_LOCATION},
+                            99)
+            }
+        }
     }
 
     /**
@@ -447,15 +414,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Set number of wrong guesses to 0
         numberOfWrongGuesses = 0
 
-        // Get last two songs
-        // TODO: Get proper last two songs
-        val lastTwo = arrayOf(1, 2)
-
-        // Pick a different song from the above for the game
         var choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
 
-        while (choice in lastTwo)
-            choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
+        // Get last two songs
+        if (numberOfPastGames > 1) {
+            val lastTwo = arrayOf(pastGames[0].song, pastGames[1].song)
+
+            while (songs[choice-1].title + " - " + songs[choice-1].artist in lastTwo)
+                choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
+        }
+        else if (numberOfPastGames == 1)
+            while (songs[choice-1].title + " - " + songs[choice-1].artist == pastGames[0].song)
+                choice = Math.floor(Math.random()*numberOfSongs + 1).toInt()
 
         // Get song to guess
         currentSong = songs[choice-1]
@@ -538,24 +508,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val timeNow = Date()
         val gameEndTime = parser.format(timeNow)
 
-        // Move all games down one position in shared preferences
-        var toMove = ""
+        // Move all games down one position in shared preferences and add new game on top
+        val toMove = hashMapOf(
+                "Date" to gameEndTime,
+                "Title" to currentSong.title + " - " + currentSong.artist,
+                "Time" to getFormattedTime(currentTime),
+                "Score" to gameScore.toString(),
+                "Guesses" to (numberOfWrongGuesses + 1).toString())
         for (i in 1..numberOfPastGames) {
-            val temp = toMove
-            toMove = sharedPreferences.getString("Game" + i, "")
-            editor.putString("Game" + i, temp)
+            for ((key, value) in toMove) {
+                toMove[key] = sharedPreferences.getString("Game" + i + "_" + key, "").also {
+                    editor.putString("Game" + i + "_" + key, value)
+                }
+            }
         }
-
-        // Add new game on the top of the list of past games
-        val lastGame = arrayOf(gameEndTime,
-                currentSong.title + " - " + currentSong.artist,
-                getFormattedTime(currentTime),
-                gameScore,
-                numberOfWrongGuesses + 1
-                ).joinToString(",")
-
-        // Put last game on top of the list of games
-        editor.putString("Game1", lastGame)
 
         // Update number of games
         editor.putInt("Past games", numberOfPastGames)
@@ -1056,7 +1022,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
             // If button was already chosen, start game
-            if ((it as Button).text == getString(R.string.startPlaying)) {
+            if ((it as Button).text == getString(R.string.LETSGO)) {
                 dialog.dismiss()
                 chooseDifficulty(it)
             }
@@ -1064,13 +1030,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             else {
                 // Reset all texts
                 cakewalk.text = getString(R.string.diffCakewalk)
+                cakewalk.textSize = 14f
                 easy.text = getString(R.string.diffEasy)
+                easy.textSize = 14f
                 medium.text = getString(R.string.diffMedium)
+                medium.textSize = 14f
                 hard.text = getString(R.string.diffHard)
+                hard.textSize = 14f
                 vhard.text = getString(R.string.diffVeryhard)
+                vhard.textSize = 14f
 
                 // Change text of currently chosen button and information about difficulty
-                it.text = getString(R.string.startPlaying)
+                it.text = getString(R.string.LETSGO)// Scale from int to dp
+                it.textSize = 18f
                 difficultyText.text = getString(diffToStats[chosen]!![3])
                 maxPoints.text = getString(R.string.maxPoints, diffToStats[chosen]!![0])
                 wordsOnMap.text = getString(R.string.wordsOnMap, diffToStats[chosen]!![1])
@@ -1121,12 +1093,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Set the onClick for playAgain and stopPlaying
         val again = mView.findViewById<Button>(R.id.playAgainButton)
         again.setOnClickListener {
+            clearMap()
             showDifficulty()
             dialog.dismiss()
         }
         // If stop playing, set timer to 0 and close the window
         val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
         stop.setOnClickListener {
+            clearMap()
             startTime = SystemClock.uptimeMillis()
             currentTime = 0L
             timer.text = getFormattedTime(currentTime)
@@ -1274,7 +1248,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //endregion
 
     // Implementation of Dice string similarity algorithm
-    // TODO: Move to separate class
     private fun stringSimilarity(s1: String, s2: String): Double {
         val p1 = HashSet<String>()
         val p2 = HashSet<String>()

@@ -7,8 +7,22 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DownloadMapTask(private val caller: DownloadCompleteListener) :
+interface MapDownloadStartedListener {
+    fun onDownloadStarted()
+}
+
+interface MapDownloadCompleteListener {
+    fun onDownloadComplete(result: List<MapPoint>?)
+}
+
+class DownloadMapTask(private val caller: MapDownloadCompleteListener,
+                      private val start: MapDownloadStartedListener) :
         AsyncTask<String, Void, List<MapPoint>?>() {
+
+    override fun onPreExecute() {
+        super.onPreExecute()
+        start.onDownloadStarted()
+    }
 
     override fun doInBackground(vararg urls: String): List<MapPoint>? {
         return try {
@@ -48,6 +62,6 @@ class DownloadMapTask(private val caller: DownloadCompleteListener) :
 
     override fun onPostExecute(result: List<MapPoint>?) {
         super.onPostExecute(result)
-        caller.onDownloadComplete(result.toString())
+        caller.onDownloadComplete(result)
     }
 }

@@ -7,12 +7,22 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-interface DownloadCompleteListener{
+interface LyricsDownloadStartedListener {
+    fun onDownloadStarted()
+}
+
+interface LyricsDownloadCompleteListener{
     fun onDownloadComplete(result: String)
 }
 
-class DownloadLyricsTask(private val caller: DownloadCompleteListener) :
+class DownloadLyricsTask(private val caller: LyricsDownloadCompleteListener,
+                         private val start: LyricsDownloadStartedListener) :
         AsyncTask<String, Void, String?>() {
+
+    override fun onPreExecute() {
+        super.onPreExecute()
+        start.onDownloadStarted()
+    }
 
     override fun doInBackground(vararg urls: String): String? {
         return try {

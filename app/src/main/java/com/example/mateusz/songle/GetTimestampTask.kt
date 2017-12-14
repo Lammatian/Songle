@@ -8,7 +8,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 
-class GetTimestampTask(private val caller: DownloadCompleteListener) :
+class GetTimestampTask(private val caller: LyricsDownloadCompleteListener) :
         AsyncTask<String, Void, Date?>() {
 
     override fun doInBackground(vararg urls: String): Date? {

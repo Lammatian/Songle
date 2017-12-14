@@ -5,10 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 
-/**
- * Created by mateusz on 24/10/17.
- * Taken from https://coderwall.com/p/qxxmaa/android-use-a-custom-font-everywhere
- */
 class FontChangeCrawler(tf: Typeface){
     var typeface = tf
 

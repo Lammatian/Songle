@@ -8,7 +8,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DownloadNewSongsTask(private val caller: DownloadCompleteListener,
+class DownloadNewSongsTask(private val caller: LyricsDownloadCompleteListener,
                         private val url: String,
                         private val numberOfSongs: Int) :
         AsyncTask<Void, Void, List<Song>?>() {
