@@ -898,6 +898,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             else -> playAgain.setOnClickListener {
                 dialog.dismiss()
                 clearMap()
+                stopTime()
                 showDifficulty()
             }
         }
@@ -1067,12 +1068,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val stop = mView.findViewById<Button>(R.id.stopPlayingButton)
         stop.setOnClickListener {
             clearMap()
-            startTime = SystemClock.uptimeMillis()
-            currentTime = 0L
-            timer.text = getFormattedTime(currentTime)
-            handler.removeCallbacks(runnable)
             dialog.dismiss()
         }
+
+        // Stop counting time for this round
+        stopTime()
 
         // Show the dialog
         dialog.show()
@@ -1180,6 +1180,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // Call this again after a second
             handler.postDelayed(this, 1000)
         }
+    }
+
+    /**
+     * Stop counting time and set timer to 00:00
+     */
+    private fun stopTime() {
+        startTime = SystemClock.uptimeMillis()
+        currentTime = 0L
+        timer.text = getFormattedTime(currentTime)
+        handler.removeCallbacks(runnable)
     }
 
     /**
