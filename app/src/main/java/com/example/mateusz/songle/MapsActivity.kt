@@ -104,28 +104,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var playerLocation: Location
     private var wordFeed: ArrayList<Button> = ArrayList()
-
-    // TODO: Implement
-    //region Network receiver
-    private inner class NetworkReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val networkInfo = connManager.activeNetworkInfo
-
-            if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
-                // use WIFI
-            }
-            else if (networkInfo != null) {
-                // use network
-            }
-            else {
-                // No WIFI and permission or no connection
-            }
-        }
-    }
-    //endregion
-
-    private var networkReceiver = NetworkReceiver()
+    private lateinit var connMgr: ConnectivityManager
+    private var isConnected: Boolean = true
 
     class Dcl : LyricsDownloadCompleteListener {
         override fun onDownloadComplete(result: String) {
@@ -141,13 +121,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Register BroadcastReceiver to track connection changes.
-        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-        this.registerReceiver(networkReceiver, filter)
-
         // Font changing
         tf =  Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainMapView)
+
+        // Run network management
+        connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        connRunnable.run()
 
         // Toggle switch onClick
         wordViewType.setOnClickListener {
@@ -1156,6 +1136,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             // Get location again in 5 seconds
             locHandler.postDelayed(this, 3000)
+        }
+    }
+    //endregion
+
+    //region Network management
+    private fun isOnline() : Boolean {
+        return connMgr.activeNetworkInfo != null && connMgr.activeNetworkInfo.isConnected
+    }
+
+    val connHandler = Handler()
+    private var connRunnable = object : Runnable {
+        override fun run() {
+            if (isOnline() && !isConnected) {
+                Toast.makeText(this@MapsActivity,
+                        "Internet connection restored",
+                        Toast.LENGTH_SHORT).show()
+                isConnected = true
+            }
+            else if (!isOnline()) {
+                Toast.makeText(this@MapsActivity,
+                        "No Internet connection",
+                        Toast.LENGTH_LONG).show()
+                isConnected = false
+            }
+            // Keep checking connection every 5 seconds
+            connHandler.postDelayed(this, 3500)
         }
     }
     //endregion

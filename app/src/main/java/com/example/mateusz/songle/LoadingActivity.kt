@@ -1,15 +1,19 @@
 package com.example.mateusz.songle
 
 import android.arch.persistence.room.Room
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
+import android.net.ConnectivityManager
 import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
 import android.preference.PreferenceManager
 import android.widget.TextView
+import android.widget.Toast
 import com.example.mateusz.songle.songdb.Lyrics
 import com.example.mateusz.songle.songdb.Song
 import com.example.mateusz.songle.songdb.SongDatabase
@@ -34,14 +38,25 @@ class LoadingActivity : AppCompatActivity() {
             1 to Difficulty.VeryHard
     )
     private lateinit var newSongs: List<Song>
+    private lateinit var connMgr: ConnectivityManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_loading)
 
+        // Change fonts
         val tf = Typeface.createFromAsset(assets, "fonts/Baloo.ttf")
         FontChangeCrawler(tf).replaceFonts(this.mainLoadingView)
 
+        // Check connection
+        connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        connRunnable.run()
+    }
+
+    /**
+     * Get new song data from the server if necessary
+     */
+    private fun getData() {
         // Shared preferences retrieval
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
 
@@ -138,4 +153,24 @@ class LoadingActivity : AppCompatActivity() {
         val intent = Intent(applicationContext, MapsActivity::class.java)
         startActivity(intent)
     }
+
+    //region Network management
+    private fun isOnline() : Boolean {
+        return connMgr.activeNetworkInfo != null && connMgr.activeNetworkInfo.isConnected
+    }
+
+    val connHandler = Handler()
+    private var connRunnable = object : Runnable {
+        override fun run() {
+            if (isOnline())
+                getData()
+            else {
+                Toast.makeText(this@LoadingActivity,
+                        "No Internet connection",
+                        Toast.LENGTH_SHORT).show()
+                connHandler.postDelayed(this, 2000)
+            }
+        }
+    }
+    //endregion
 }
