@@ -46,6 +46,7 @@ private const val MIN_LAT = 55.942617
 private const val MAX_LAT = 55.946233
 private const val MIN_LNG = -3.192473
 private const val MAX_LNG = -3.184319
+private const val PICKUP_DISTANCE = 15
 
 // Difficulties
 enum class Difficulty {
@@ -273,7 +274,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 markerLoc.longitude = marker.position.longitude
 
                 // Check if player can pick up the word from current distance
-                if (playerLocation.distanceTo(markerLoc) > 15)
+                if (playerLocation.distanceTo(markerLoc) > PICKUP_DISTANCE)
                     return true
 
                 // Sort out treasure separately
